@@ -25,7 +25,6 @@ import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
-import net.neoforged.neoforge.registries.holdersets.OrHolderSet;
 
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -157,7 +156,7 @@ public final class TransformLogic {
             if (holderSets.size() == 1) {
                 return holderSets.getFirst();
             }
-            return new OrHolderSet<>(holderSets);
+            return HolderSet.direct(holderSets.stream().flatMap(HolderSet::stream).distinct().toList());
         });
     }
 
@@ -177,7 +176,7 @@ public final class TransformLogic {
             if (holderSets.size() == 1) {
                 ret = holderSets.getFirst();
             } else {
-                ret = new OrHolderSet<>(holderSets);
+                ret = HolderSet.direct(holderSets.stream().flatMap(HolderSet::stream).distinct().toList());
             }
             anyFluidCache = ret;
         }
@@ -205,7 +204,7 @@ public final class TransformLogic {
             if (holderSets.size() == 1) {
                 ret = holderSets.getFirst();
             } else {
-                ret = new OrHolderSet<>(holderSets);
+                ret = HolderSet.direct(holderSets.stream().flatMap(HolderSet::stream).distinct().toList());
             }
             explosionCache = ret;
         }

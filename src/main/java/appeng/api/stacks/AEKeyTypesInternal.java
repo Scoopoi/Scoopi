@@ -33,7 +33,7 @@ public final class AEKeyTypesInternal {
     public static void setRegistry(Registry<AEKeyType> registry) {
         Preconditions.checkState(AEKeyTypesInternal.registry == null);
         AEKeyTypesInternal.registry = registry;
-        registry.addCallback((BakeCallback<AEKeyType>) (ignored -> {
+        net.neoforged.neoforge.registries.RegistryCallbacks.addCallback(registry, (BakeCallback<AEKeyType>) (ignored -> {
             var types = new HashSet<AEKeyType>();
             for (var aeKeyType : registry) {
                 types.add(aeKeyType);
