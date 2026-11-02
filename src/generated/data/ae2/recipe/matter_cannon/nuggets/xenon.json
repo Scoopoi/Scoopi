@@ -1,11 +1,10 @@
 {
-  "neoforge:conditions": [
+  "fabric:load_conditions": [
     {
-      "type": "neoforge:not",
-      "value": {
-        "type": "neoforge:tag_empty",
-        "tag": "c:nuggets/xenon"
-      }
+      "condition": "fabric:tags_populated",
+      "values": [
+        "c:nuggets/xenon"
+      ]
     }
   ],
   "type": "ae2:matter_cannon",

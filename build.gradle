@@ -66,3 +66,13 @@ jar {
         rename { "${it}_ae2" }
     }
 }
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "ae2-gametest"
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+    }
+}

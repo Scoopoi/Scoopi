@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
     {
-      "neoforge:ingredient_type": "neoforge:difference",
+      "fabric:type": "fabric:difference",
       "base": "#ae2:smart_cable",
       "subtracted": "ae2:fluix_smart_cable"
     },

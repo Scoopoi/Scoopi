@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "ae2-gametest",
+  "version": "1.0.0",
+  "name": "AE2 Fabric port smoke tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-client-gametest": ["appeng.fabric.gametest.AE2ClientGameTest"]
+  },
+  "depends": {
+    "ae2": "*"
+  }
+}
