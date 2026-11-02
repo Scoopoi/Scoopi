@@ -27,7 +27,6 @@ import com.google.common.collect.Multimap;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 
 import appeng.api.ids.AECreativeTabIds;
 import appeng.block.AEBaseBlock;
@@ -52,9 +51,17 @@ public final class MainCreativeTab {
         Registry.register(registry, AECreativeTabIds.MAIN, tab);
     }
 
-    public static void initExternal(BuildCreativeModeTabContentsEvent contents) {
-        for (var itemDefinition : externalItemDefs.get(contents.getTabKey())) {
-            contents.accept(itemDefinition);
+    /**
+     * Registers the items added to vanilla (external) creative tabs. Fabric version of the NeoForge
+     * BuildCreativeModeTabContentsEvent listener.
+     */
+    public static void initExternal() {
+        for (var tabKey : externalItemDefs.keySet()) {
+            net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents.modifyOutputEvent(tabKey).register(output -> {
+                for (var itemDefinition : externalItemDefs.get(tabKey)) {
+                    output.accept(itemDefinition);
+                }
+            });
         }
     }
 

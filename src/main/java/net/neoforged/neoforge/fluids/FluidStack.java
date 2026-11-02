@@ -36,7 +36,6 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.common.MutableDataComponentHolder;
-import net.neoforged.neoforge.event.EventHooks;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -162,7 +161,7 @@ public final class FluidStack implements MutableDataComponentHolder, FluidInstan
     }
 
     public boolean isComponentsPatchEmpty() {
-        return !this.isEmpty() ? this.components.isPatchEmpty() : true;
+        return !this.isEmpty() ? this.components.asPatch().isEmpty() : true;
     }
 
     public FluidStack(Fluid fluid, int amount, DataComponentPatch patch) {
@@ -330,7 +329,7 @@ public final class FluidStack implements MutableDataComponentHolder, FluidInstan
         if (a.isEmpty() || b == null) {
             return a.isEmpty() == (b == null);
         } else {
-            return a.is(b.fluid()) && a.components.patchEquals(b.components());
+            return a.is(b.fluid()) && a.components.asPatch().equals(b.components());
         }
     }
 
@@ -396,8 +395,6 @@ public final class FluidStack implements MutableDataComponentHolder, FluidInstan
             Fluid fluid = getFluid();
             List<Component> list = Lists.newArrayList();
             list.add(this.getHoverName());
-            fluid.appendHoverText(this, context, tooltipDisplay, list::add, flag);
-            EventHooks.onFluidTooltip(this, player, list, flag, context);
             if (flag.isAdvanced()) {
                 list.add(Component.literal(BuiltInRegistries.FLUID.getKey(fluid).toString()).withStyle(ChatFormatting.DARK_GRAY));
                 int componentCount = this.components.size();

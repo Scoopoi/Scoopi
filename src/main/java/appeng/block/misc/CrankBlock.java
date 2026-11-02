@@ -35,7 +35,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.common.util.FakePlayer;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 
 import appeng.api.implementations.blockentities.ICrankable;
 import appeng.api.orientation.IOrientationStrategy;

@@ -159,7 +159,7 @@ public final class BlockCapability<T, C extends @Nullable Object> extends BaseCa
      * and prevent it from being marked as proxyable.
      */
     public boolean isProxyable() {
-        return proxyable.isTrue();
+        return proxyable == TriState.TRUE;
     }
 
     // INTERNAL
@@ -175,7 +175,7 @@ public final class BlockCapability<T, C extends @Nullable Object> extends BaseCa
     private TriState proxyable = TriState.DEFAULT; // default is false
 
     void setProxyable(boolean proxyable) {
-        if (CapabilityHooks.initFinished) {
+        if (appeng.fabric.shim.ShimCapabilities.initFinished) {
             throw new IllegalStateException("Cannot call setProxyable after the RegisterCapabilitiesEvent has been fired.");
         }
         switch (this.proxyable) {
@@ -216,6 +216,12 @@ public final class BlockCapability<T, C extends @Nullable Object> extends BaseCa
             if (ret != null)
                 return ret;
         }
-        return null;
+        // Fall back to Fabric API lookups (Transfer API etc.)
+        return appeng.fabric.shim.ShimCapabilities.fallbackBlock(this, level, pos, state, blockEntity, context);
+    }
+
+    /** Fabric port: the set of objects that have providers registered. */
+    public java.util.Set<net.minecraft.world.level.block.Block> getRegisteredBlocks() {
+        return java.util.Collections.unmodifiableSet(providers.keySet());
     }
 }

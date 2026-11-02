@@ -46,7 +46,6 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
-import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -92,7 +91,6 @@ import appeng.recipes.AERecipeSerializers;
 import appeng.recipes.AERecipeTypes;
 import appeng.server.AECommand;
 import appeng.server.services.ChunkLoadingService;
-import appeng.server.testworld.GameTestPlotAdapter;
 import appeng.sounds.AppEngSounds;
 import appeng.spatial.SpatialStorageChunkGenerator;
 import appeng.spatial.SpatialStorageDimensionIds;
@@ -169,16 +167,12 @@ public abstract class AppEngBase implements AppEng {
                 InitVillager.initPointOfInterestType(event.getRegistry(Registries.POINT_OF_INTEREST_TYPE));
             } else if (event.getRegistryKey() == AEKeyType.REGISTRY_KEY) {
                 registerKeyTypes(event.getRegistry(AEKeyType.REGISTRY_KEY));
-            } else if (event.getRegistryKey() == Registries.TEST_INSTANCE_TYPE) {
-                event.register(Registries.TEST_INSTANCE_TYPE, AppEng.makeId("plot_adapter"),
-                        () -> GameTestPlotAdapter.CODEC);
             }
         });
 
         modEventBus.addListener(Integrations::enqueueIMC);
         modEventBus.addListener(this::commonSetup);
 
-        modEventBus.addListener(this::registerTests);
 
         TickHandler.instance().init();
 
@@ -325,12 +319,6 @@ public abstract class AppEngBase implements AppEng {
         }
 
         return CableRenderMode.STANDARD;
-    }
-
-    private void registerTests(RegisterGameTestsEvent e) {
-        if (Boolean.getBoolean("appeng.tests")) {
-            GameTestPlotAdapter.registerAll(e::registerTest);
-        }
     }
 
     @Override

@@ -6,7 +6,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
-import guideme.GuidesCommon;
 
 import appeng.core.AppEng;
 import appeng.items.AEBaseItem;
@@ -24,7 +23,7 @@ public class GuideItem extends AEBaseItem {
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide()) {
-            GuidesCommon.openGuide(player, GUIDE_ID);
+            // GuideME is not available on Fabric
         }
 
         return InteractionResult.FAIL;

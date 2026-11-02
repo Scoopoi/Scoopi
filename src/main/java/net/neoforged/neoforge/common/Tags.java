@@ -542,22 +542,22 @@ public class Tags {
         public static final TagKey<Item> DYED_YELLOW = tag("dyed/yellow");
 
         public static final TagKey<Item> DYES = tag("dyes");
-        public static final TagKey<Item> DYES_BLACK = DyeColor.BLACK.getTag();
-        public static final TagKey<Item> DYES_RED = DyeColor.RED.getTag();
-        public static final TagKey<Item> DYES_GREEN = DyeColor.GREEN.getTag();
-        public static final TagKey<Item> DYES_BROWN = DyeColor.BROWN.getTag();
-        public static final TagKey<Item> DYES_BLUE = DyeColor.BLUE.getTag();
-        public static final TagKey<Item> DYES_PURPLE = DyeColor.PURPLE.getTag();
-        public static final TagKey<Item> DYES_CYAN = DyeColor.CYAN.getTag();
-        public static final TagKey<Item> DYES_LIGHT_GRAY = DyeColor.LIGHT_GRAY.getTag();
-        public static final TagKey<Item> DYES_GRAY = DyeColor.GRAY.getTag();
-        public static final TagKey<Item> DYES_PINK = DyeColor.PINK.getTag();
-        public static final TagKey<Item> DYES_LIME = DyeColor.LIME.getTag();
-        public static final TagKey<Item> DYES_YELLOW = DyeColor.YELLOW.getTag();
-        public static final TagKey<Item> DYES_LIGHT_BLUE = DyeColor.LIGHT_BLUE.getTag();
-        public static final TagKey<Item> DYES_MAGENTA = DyeColor.MAGENTA.getTag();
-        public static final TagKey<Item> DYES_ORANGE = DyeColor.ORANGE.getTag();
-        public static final TagKey<Item> DYES_WHITE = DyeColor.WHITE.getTag();
+        public static final TagKey<Item> DYES_BLACK = tag("dyes/black");
+        public static final TagKey<Item> DYES_RED = tag("dyes/red");
+        public static final TagKey<Item> DYES_GREEN = tag("dyes/green");
+        public static final TagKey<Item> DYES_BROWN = tag("dyes/brown");
+        public static final TagKey<Item> DYES_BLUE = tag("dyes/blue");
+        public static final TagKey<Item> DYES_PURPLE = tag("dyes/purple");
+        public static final TagKey<Item> DYES_CYAN = tag("dyes/cyan");
+        public static final TagKey<Item> DYES_LIGHT_GRAY = tag("dyes/light_gray");
+        public static final TagKey<Item> DYES_GRAY = tag("dyes/gray");
+        public static final TagKey<Item> DYES_PINK = tag("dyes/pink");
+        public static final TagKey<Item> DYES_LIME = tag("dyes/lime");
+        public static final TagKey<Item> DYES_YELLOW = tag("dyes/yellow");
+        public static final TagKey<Item> DYES_LIGHT_BLUE = tag("dyes/light_blue");
+        public static final TagKey<Item> DYES_MAGENTA = tag("dyes/magenta");
+        public static final TagKey<Item> DYES_ORANGE = tag("dyes/orange");
+        public static final TagKey<Item> DYES_WHITE = tag("dyes/white");
 
         /**
          * For eggs to use for culinary purposes in recipes such as baking a cake.

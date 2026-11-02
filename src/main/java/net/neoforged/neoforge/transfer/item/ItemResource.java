@@ -76,7 +76,7 @@ public final class ItemResource implements DataComponentHolderResource<Item> {
      * @return If there were no patches on the stack's data components, the item's default resource will be returned, otherwise a new instance with the copied stack.
      */
     public static ItemResource of(ItemStack stack) {
-        if (stack.isEmpty() || stack.isComponentsPatchEmpty()) {
+        if (stack.isEmpty() || stack.getComponentsPatch().isEmpty()) {
             return of(stack.getItem());
         }
         return new ItemResource(stack.copyWithCount(1));
@@ -111,7 +111,7 @@ public final class ItemResource implements DataComponentHolderResource<Item> {
     public static ItemResource of(ItemLike item) {
         Item value = item.asItem();
         if (value == Items.AIR) return EMPTY;
-        return value.computeDefaultResource(i -> new ItemResource(new ItemStack(i)));
+        return appeng.fabric.shim.ShimHooks.defaultItemResource(value, i -> new ItemResource(new ItemStack(i)));
     }
 
     /**
@@ -209,7 +209,7 @@ public final class ItemResource implements DataComponentHolderResource<Item> {
      * @param template the item stack template to check
      */
     public boolean matches(@Nullable ItemStackTemplate template) {
-        return ItemStack.isSameItemSameComponents(innerStack, template);
+        return template != null && ItemStack.isSameItemSameComponents(innerStack, template.create());
     }
 
     /**
@@ -233,7 +233,7 @@ public final class ItemResource implements DataComponentHolderResource<Item> {
 
     @Override
     public boolean isComponentsPatchEmpty() {
-        return innerStack.isComponentsPatchEmpty();
+        return innerStack.getComponentsPatch().isEmpty();
     }
 
     @Override

@@ -18,7 +18,6 @@ import net.neoforged.neoforge.common.util.ValueIOSerializable;
 import net.neoforged.neoforge.transfer.fluid.FluidStacksResourceHandler;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
-import net.neoforged.neoforge.transfer.item.ResourceHandlerSlot;
 import net.neoforged.neoforge.transfer.resource.Resource;
 import net.neoforged.neoforge.transfer.resource.ResourceStack;
 import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
@@ -112,7 +111,7 @@ public abstract class StacksResourceHandler<S, T extends Resource> implements Re
     /**
      * Directly overwrites the contents of the handler.
      *
-     * <p>Note that this method can be used as an {@link IndexModifier}, for usage in {@link ResourceHandlerSlot}.
+     * <p>Note that this method can be used as an {@link IndexModifier}, for usage in slots.
      *
      * @param index    index to change
      * @param resource new resource at the index

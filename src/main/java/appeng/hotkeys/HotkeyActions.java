@@ -56,7 +56,6 @@ public class HotkeyActions {
      */
     public static void register(ItemLike item, InventoryHotkeyAction.Opener opener, String id) {
         register(new InventoryHotkeyAction(item, opener), id);
-        register(new CuriosHotkeyAction(item, opener), id);
     }
 
     /**

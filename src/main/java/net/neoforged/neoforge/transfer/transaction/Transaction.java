@@ -205,12 +205,20 @@ public final class Transaction implements AutoCloseable, TransactionContext {
     private void close(boolean wasAborted) {
         manager.validateCurrentTransaction(this);
         validateOpen();
+        // Fabric port: close any mirrored Fabric Transfer API transaction for this depth first
+        RuntimeException bridgeException = null;
+        try {
+            appeng.fabric.shim.TransactionBridge.onNeoClose(this, wasAborted);
+        } catch (RuntimeException e) {
+            bridgeException = e;
+        }
+
         // Block transaction operations
         open = false;
 
         // Note: it is important that we don't let exceptions corrupt the global state of the transaction manager.
         // That is why every callback has to run inside its own try-with-resources block.
-        RuntimeException closeException = null;
+        RuntimeException closeException = bridgeException;
 
         // Invoke callbacks
         for (SnapshotJournal<?> journal : journalsToClose) {

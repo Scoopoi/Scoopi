@@ -10,8 +10,6 @@
     "AnvilMenuMixin",
     "EnchantmentHelperMixin",
     "ItemEntityMixin",
-    "tests.TestInstanceBlockEntityMixin",
-    "tests.TestCommandMixin",
     "StructureTemplateMixin"
   ],
   "client": [

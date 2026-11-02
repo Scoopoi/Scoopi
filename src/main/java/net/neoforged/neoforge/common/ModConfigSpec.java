@@ -197,10 +197,6 @@ public class ModConfigSpec {
             return value;
         }
 
-        public T getAsBoolean() {
-            return value;
-        }
-
         public T getRaw() {
             return value;
         }

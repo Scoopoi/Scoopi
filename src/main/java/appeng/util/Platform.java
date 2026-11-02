@@ -58,7 +58,7 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.util.thread.SidedThreadGroups;
-import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import appeng.api.config.AccessRestriction;
@@ -266,7 +266,7 @@ public class Platform {
             playerUuid = DEFAULT_FAKE_PLAYER_UUID;
         }
 
-        return FakePlayerFactory.get(level, new GameProfile(playerUuid, "[AE2]"));
+        return FakePlayer.get(level, new GameProfile(playerUuid, "[AE2]"));
     }
 
     public static Direction rotateAround(Direction forward, Direction axis) {

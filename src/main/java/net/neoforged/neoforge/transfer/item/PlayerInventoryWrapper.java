@@ -13,7 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.neoforged.neoforge.common.CommonHooks;
 import net.neoforged.neoforge.transfer.CombinedResourceHandler;
 import net.neoforged.neoforge.transfer.RangedResourceHandler;
 import net.neoforged.neoforge.transfer.ResourceHandler;
@@ -230,7 +229,7 @@ public final class PlayerInventoryWrapper extends VanillaContainerWrapper {
                 while (remainder > 0) {
                     int dropped = Math.min(maxStackSize, remainder);
                     // This takes care of firing ItemTossEvent + dropping the entity if the event is not canceled
-                    CommonHooks.onPlayerTossEvent(inventory.player, dropInfo.resource.toStack(dropped), dropInfo.dropAround, dropInfo.includeThrowerName);
+                    inventory.player.drop(dropInfo.resource.toStack(dropped), dropInfo.dropAround, dropInfo.includeThrowerName);
                     remainder -= dropped;
                 }
             }
@@ -253,12 +252,12 @@ public final class PlayerInventoryWrapper extends VanillaContainerWrapper {
 
         @Override
         protected boolean isValid(ItemResource resource) {
-            return resource.toStack().canEquip(slot, inventory.player) && super.isValid(resource);
+            return inventory.player.getEquipmentSlotForItem(resource.toStack()) == slot && super.isValid(resource);
         }
 
         @Override
         protected int getCapacity(ItemResource resource) {
-            return slot.countLimit;
+            return 1;
         }
 
         @Override

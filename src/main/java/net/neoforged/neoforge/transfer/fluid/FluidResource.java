@@ -99,7 +99,7 @@ public final class FluidResource implements DataComponentHolderResource<Fluid> {
      */
     public static FluidResource of(Fluid fluid) {
         if (fluid == Fluids.EMPTY) return EMPTY;
-        return fluid.computeDefaultResource(f -> new FluidResource(new FluidStack(f, FluidType.BUCKET_VOLUME)));
+        return appeng.fabric.shim.ShimHooks.defaultFluidResource(fluid, f -> new FluidResource(new FluidStack(f, FluidType.BUCKET_VOLUME)));
     }
 
     /**

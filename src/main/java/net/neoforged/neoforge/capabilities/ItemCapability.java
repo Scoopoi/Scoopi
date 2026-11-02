@@ -101,6 +101,11 @@ public final class ItemCapability<T, C extends @Nullable Object> extends BaseCap
             if (ret != null)
                 return ret;
         }
-        return null;
+        return appeng.fabric.shim.ShimCapabilities.fallbackItem(this, stack, context);
+    }
+
+    /** Fabric port: the set of objects that have providers registered. */
+    public java.util.Set<net.minecraft.world.item.Item> getRegisteredItems() {
+        return java.util.Collections.unmodifiableSet(providers.keySet());
     }
 }

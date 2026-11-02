@@ -112,10 +112,15 @@ public class RegistryBuilder<T> {
      * @return the created registry
      * @see NewRegistryEvent#register(Registry)
      */
+    @SuppressWarnings("unchecked")
+    private ResourceKey<Registry<T>> castKey() {
+        return (ResourceKey<Registry<T>>) (ResourceKey<?>) this.registryKey;
+    }
+
     public Registry<T> create() {
         var builder = this.defaultKey != null
-                ? net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder.create(this.registryKey, this.defaultKey)
-                : net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder.create(this.registryKey);
+                ? net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder.createDefaulted(castKey(), this.defaultKey)
+                : net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder.create(castKey());
         if (this.sync) {
             builder.attribute(net.fabricmc.fabric.api.event.registry.RegistryAttribute.SYNCED);
         }

@@ -156,7 +156,7 @@ public class VanillaContainerWrapper implements ResourceHandler<ItemResource> {
         @Override
         protected void setStack(ItemStack item) {
             // We pass insideTransaction = true to disable all non-transactional actions.
-            container.setItem(index, item, true);
+            container.setItem(index, item);
         }
 
         @Override
@@ -192,7 +192,6 @@ public class VanillaContainerWrapper implements ResourceHandler<ItemResource> {
         public int insert(int index, ItemResource resource, int amount, TransactionContext transaction) {
             int inserted = super.insert(index, resource, amount, transaction);
             if (inserted > 0) {
-                container.onTransfer(this.index, inserted, transaction);
             }
             return inserted;
         }
@@ -201,7 +200,6 @@ public class VanillaContainerWrapper implements ResourceHandler<ItemResource> {
         public int extract(int index, ItemResource resource, int amount, TransactionContext transaction) {
             int extracted = super.extract(index, resource, amount, transaction);
             if (extracted > 0) {
-                container.onTransfer(this.index, -extracted, transaction);
             }
             return extracted;
         }

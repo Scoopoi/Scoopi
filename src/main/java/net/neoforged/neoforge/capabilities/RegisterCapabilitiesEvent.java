@@ -66,7 +66,7 @@ public class RegisterCapabilitiesEvent extends Event implements IModBusEvent {
             return provider.getCapability((BE) blockEntity, context);
         };
 
-        for (Block block : blockEntityType.getValidBlocks()) {
+        for (Block block : appeng.fabric.shim.ShimHooks.getValidBlocks(blockEntityType)) {
             Objects.requireNonNull(block);
             capability.providers.computeIfAbsent(block, b -> new ArrayList<>()).add(adaptedProvider);
         }

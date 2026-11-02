@@ -29,7 +29,7 @@ class StackItemAccess implements ItemAccess {
         wrapper = VanillaContainerWrapper.of(new SimpleContainer(stack) {
             // Override to avoid clamping oversized stacks to their max stack size, just in case.
             @Override
-            public void setItem(int slot, ItemStack stack, boolean performSideEffects) {
+            public void setItem(int slot, ItemStack stack) {
                 getItems().set(slot, stack);
             }
         });

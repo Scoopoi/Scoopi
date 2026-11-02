@@ -71,8 +71,7 @@ public class DeferredHolder<R, T extends R> implements Supplier<T> {
     /**
      * The currently cached value.
      */
-    @Nullable
-    private Holder.@Nullable Reference<R> holder = null;
+    private Holder.Reference<R> holder = null;
 
     /**
      * Creates a new DeferredHolder with a ResourceKey.
@@ -275,10 +274,6 @@ public class DeferredHolder<R, T extends R> implements Supplier<T> {
      */
     public Optional<ResourceKey<R>> unwrapKey() {
         return Optional.of(this.key);
-    }
-
-    public Kind kind() {
-        return Kind.REFERENCE;
     }
 
     public boolean canSerializeIn(HolderOwner<R> owner) {

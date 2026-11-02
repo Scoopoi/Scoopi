@@ -26,7 +26,6 @@ import appeng.server.services.compass.TestCompassCommand;
 import appeng.server.subcommands.ChannelModeCommand;
 import appeng.server.subcommands.ChunkLogger;
 import appeng.server.subcommands.GridsCommand;
-import appeng.server.subcommands.SetupTestWorldCommand;
 import appeng.server.subcommands.SpatialStorageCommand;
 import appeng.server.subcommands.TestMeteoritesCommand;
 import appeng.server.subcommands.TickMonitoring;
@@ -41,8 +40,7 @@ public enum Commands {
 
     // Testing
     COMPASS(net.minecraft.commands.Commands.LEVEL_OWNERS, "compass", new TestCompassCommand(), true),
-    TEST_METEORITES(net.minecraft.commands.Commands.LEVEL_OWNERS, "testmeteorites", new TestMeteoritesCommand(), true),
-    SETUP_TEST_WORLD(net.minecraft.commands.Commands.LEVEL_OWNERS, "setuptestworld", new SetupTestWorldCommand(), true);
+    TEST_METEORITES(net.minecraft.commands.Commands.LEVEL_OWNERS, "testmeteorites", new TestMeteoritesCommand(), true);
 
     public final PermissionCheck requiredPermission;
     public final ISubCommand command;

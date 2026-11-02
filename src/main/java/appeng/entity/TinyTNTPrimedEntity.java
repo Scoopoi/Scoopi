@@ -47,7 +47,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
-import net.neoforged.neoforge.event.EventHooks;
 
 import appeng.core.AEConfig;
 import appeng.core.AppEng;
@@ -198,7 +197,6 @@ public final class TinyTNTPrimedEntity extends PrimedTnt implements IEntityWithC
                 }
             }
         }
-        EventHooks.onExplosionDetonate(this.level(), ex, list, pos);
 
         AppEng.instance().sendToAllNearExcept(null, this.getX(), this.getY(), this.getZ(), 64, this.level(),
                 new MockExplosionPacket(this.getX(), this.getY(), this.getZ()));
