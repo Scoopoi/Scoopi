@@ -62,7 +62,7 @@ public final class SimpleUnbakedStandaloneModel<T> implements UnbakedStandaloneM
      */
     public static SimpleUnbakedStandaloneModel<BlockStateModelPart> simpleModelWrapper(Identifier modelId) {
         return new SimpleUnbakedStandaloneModel<>(
-                modelId, (model, baker, _) -> SimpleModelWrapper.bake(baker, model, BlockModelRotation.IDENTITY));
+                modelId, (model, baker, _) -> SimpleModelWrapper.bake(baker, modelId, BlockModelRotation.IDENTITY));
     }
 
     /**
@@ -70,7 +70,7 @@ public final class SimpleUnbakedStandaloneModel<T> implements UnbakedStandaloneM
      */
     public static SimpleUnbakedStandaloneModel<BlockStateModelPart> simpleModelWrapper(Identifier modelId, ModelState modelState) {
         return new SimpleUnbakedStandaloneModel<>(
-                modelId, (model, baker, _) -> SimpleModelWrapper.bake(baker, model, modelState));
+                modelId, (model, baker, _) -> SimpleModelWrapper.bake(baker, modelId, modelState));
     }
 
     /**
@@ -78,7 +78,7 @@ public final class SimpleUnbakedStandaloneModel<T> implements UnbakedStandaloneM
      */
     public static SimpleUnbakedStandaloneModel<BlockStateModel> blockStateModel(Identifier modelId) {
         return new SimpleUnbakedStandaloneModel<>(
-                modelId, (model, baker, _) -> new SingleVariant(SimpleModelWrapper.bake(baker, model, BlockModelRotation.IDENTITY)));
+                modelId, (model, baker, _) -> new SingleVariant(SimpleModelWrapper.bake(baker, modelId, BlockModelRotation.IDENTITY)));
     }
 
     /**
@@ -86,7 +86,7 @@ public final class SimpleUnbakedStandaloneModel<T> implements UnbakedStandaloneM
      */
     public static SimpleUnbakedStandaloneModel<BlockStateModel> blockStateModel(Identifier modelId, ModelState modelState) {
         return new SimpleUnbakedStandaloneModel<>(
-                modelId, (model, baker, _) -> new SingleVariant(SimpleModelWrapper.bake(baker, model, modelState)));
+                modelId, (model, baker, _) -> new SingleVariant(SimpleModelWrapper.bake(baker, modelId, modelState)));
     }
 
     /**

@@ -561,8 +561,7 @@ public abstract class AEBaseScreen<T extends AEBaseMenu> extends AbstractContain
 
         // Handler for Pick Block mouse click in Survival mode
         // (Key presses & Creative clicks all reach slotClicked handler as CLONE slot clicks)
-        var pickBlockButton = InputConstants.Type.MOUSE.getOrCreate(event.button());
-        if (getMinecraft().options.keyPickItem.isActiveAndMatches(pickBlockButton)
+        if (getMinecraft().options.keyPickItem.matchesMouse(event)
                 && handlePickBlock(this.getHoveredSlot(event.x(), event.y()))) {
             return true;
         }
@@ -806,7 +805,7 @@ public abstract class AEBaseScreen<T extends AEBaseMenu> extends AbstractContain
     }
 
     @Override
-    protected boolean isHovering(Slot slot, double x, double y) {
+    public boolean isHovering(Slot slot, double x, double y) {
         if (slot instanceof ResizableSlot resizableSlot) {
             var width = resizableSlot.getWidth();
             var height = resizableSlot.getHeight();

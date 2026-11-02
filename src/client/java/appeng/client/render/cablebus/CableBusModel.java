@@ -161,7 +161,8 @@ public class CableBusModel implements DynamicBlockStateModel {
     }
 
     @Override
-    public @BakedQuad.MaterialFlags int materialFlags(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+    public @BakedQuad.MaterialFlags int materialFlags(BlockAndTintGetter level, BlockPos pos, BlockState state,
+            net.minecraft.util.RandomSource random) {
         // TODO 26.1: Determine flags based on attached part models
         return materialFlags();
     }

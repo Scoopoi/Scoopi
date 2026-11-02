@@ -86,7 +86,7 @@ public class FacadeItemModel implements ItemModel {
         }
 
         var facadeBlockState = itemFacade.getTextureBlockState(stack);
-        if (facadeBlockState.isEmpty()) {
+        if (facadeBlockState.isAir()) {
             missingItemModel.update(renderState, stack, itemModelResolver, displayContext, level, owner, seed);
             return;
         }

@@ -45,7 +45,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
-import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
 import net.neoforged.neoforge.model.data.ModelProperty;
 
 import appeng.core.AppEng;
@@ -198,28 +197,21 @@ public class QuartzGlassModel implements DynamicBlockStateModel {
         float v1 = Mth.clamp(0 - vOffset, 0, 1);
         float v2 = Mth.clamp(1 - vOffset, 0, 1);
 
-        var builder = new QuadBakingVertexConsumer();
-        builder.setSprite(sprite);
-        builder.setDirection(side);
-        this.putVertex(builder, normal, c1.x(), c1.y(), c1.z(), sprite, u1, v1);
-        this.putVertex(builder, normal, c2.x(), c2.y(), c2.z(), sprite, u1, v2);
-        this.putVertex(builder, normal, c3.x(), c3.y(), c3.z(), sprite, u2, v2);
-        this.putVertex(builder, normal, c4.x(), c4.y(), c4.z(), sprite, u2, v1);
-        return builder.bakeQuad();
+        var quad = new net.neoforged.neoforge.client.model.quad.MutableQuad();
+        quad.setSprite(sprite);
+        quad.setDirection(side);
+        quad.setShade(true);
+        putVertex(quad, 0, c1, sprite, u1, v1);
+        putVertex(quad, 1, c2, sprite, u1, v2);
+        putVertex(quad, 2, c3, sprite, u2, v2);
+        putVertex(quad, 3, c4, sprite, u2, v1);
+        return quad.toBakedQuad();
     }
 
-    /*
-     * This method is as complicated as it is, because the order in which we push data into the vertexbuffer actually
-     * has to be precisely the order in which the vertex elements had been declared in the vertex format.
-     */
-    private void putVertex(QuadBakingVertexConsumer builder, Vec3 normal, float x, float y, float z,
+    private static void putVertex(net.neoforged.neoforge.client.model.quad.MutableQuad quad, int index, Vector3f pos,
             Material.Baked sprite, float u, float v) {
-        builder.addVertex(x, y, z);
-        builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        builder.setNormal((float) normal.x, (float) normal.y, (float) normal.z);
-        u = sprite.sprite().getU(u);
-        v = sprite.sprite().getV(v);
-        builder.setUv(u, v);
+        quad.setPosition(index, pos);
+        quad.setUv(index, sprite.sprite().getU(u), sprite.sprite().getV(v));
     }
 
     @Override

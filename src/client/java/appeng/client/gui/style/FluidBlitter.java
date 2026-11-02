@@ -51,9 +51,9 @@ public final class FluidBlitter {
         TextureAtlasSprite sprite = fluidModel.stillMaterial().sprite();
 
         var color = -1;
-        var tintSource = fluidModel.fluidTintSource();
+        var tintSource = fluidModel.tintSource();
         if (tintSource != null) {
-            color = tintSource.colorAsStack(stack);
+            color = appeng.fabric.client.ShimClientRendering.fluidColor(stack);
         }
 
         return Blitter.sprite(sprite)

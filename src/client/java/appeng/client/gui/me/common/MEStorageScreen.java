@@ -730,7 +730,7 @@ public class MEStorageScreen<C extends MEStorageMenu>
             var stack = itemKey.getReadOnlyStack();
             // By using the overload of the renderTooltip method that takes an ItemStack, we support the Forge tooltip
             // event system
-            guiGraphics.setTooltipForNextFrame(font, currentToolTip, stack.getTooltipImage(), stack, x, y);
+            guiGraphics.setTooltipForNextFrame(font, currentToolTip, stack.getTooltipImage(), x, y);
         } else {
             guiGraphics.setComponentTooltipForNextFrame(font, currentToolTip, x, y);
         }

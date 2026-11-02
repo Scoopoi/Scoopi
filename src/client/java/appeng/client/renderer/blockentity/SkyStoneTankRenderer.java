@@ -68,9 +68,9 @@ public final class SkyStoneTankRenderer
         var fluidModel = Minecraft.getInstance().getModelManager().getFluidStateModelSet()
                 .get(resource.getFluid().defaultFluidState());
         state.sprite = fluidModel.stillMaterial().sprite();
-        var tintSource = fluidModel.fluidTintSource();
+        var tintSource = fluidModel.tintSource();
         if (tintSource != null) {
-            state.color = tintSource.colorAsStack(fluidStack);
+            state.color = appeng.fabric.client.ShimClientRendering.fluidColor(fluidStack);
         } else {
             state.color = -1;
         }

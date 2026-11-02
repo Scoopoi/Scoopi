@@ -202,10 +202,11 @@ public class SpatialPylonModel implements DynamicBlockStateModel {
     }
 
     @Override
-    public @BakedQuad.MaterialFlags int materialFlags(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+    public @BakedQuad.MaterialFlags int materialFlags(BlockAndTintGetter level, BlockPos pos, BlockState state,
+            net.minecraft.util.RandomSource random) {
         // TODO 26.1: Compute the actual wost-case material flags based on the concrete texture used by the pylon at the
         // location
-        return DynamicBlockStateModel.super.materialFlags(level, pos, state);
+        return DynamicBlockStateModel.super.materialFlags(level, pos, state, random);
     }
 
     public record Unbaked() implements CustomUnbakedBlockStateModel {

@@ -75,7 +75,6 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
 import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.client.resources.VanillaClientListeners;
-import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.NeoForge;
 
 
@@ -90,7 +89,6 @@ import appeng.client.api.model.parts.CompositePartModel;
 import appeng.client.api.model.parts.RegisterPartModelsEvent;
 import appeng.client.api.model.parts.StaticPartModel;
 import appeng.client.api.renderer.parts.RegisterPartRendererEvent;
-import appeng.client.areaoverlay.AreaOverlayRenderer;
 import appeng.client.block.cablebus.CableBusBlockClientExtensions;
 import appeng.client.block.cablebus.CableBusColor;
 import appeng.client.commands.ClientCommands;
@@ -99,7 +97,6 @@ import appeng.client.gui.me.common.PinnedKeys;
 import appeng.client.gui.style.StyleManager;
 import appeng.client.hooks.BlockAttackHook;
 import appeng.client.hooks.RenderBlockOutlineHook;
-import appeng.client.integrations.itemlists.FluidBlockPictureInPictureRenderer;
 import appeng.client.item.ColorApplicatorItemModel;
 import appeng.client.item.EnergyFillLevelProperty;
 import appeng.client.item.PortableCellColorTintSource;
@@ -205,11 +202,11 @@ public class AppEngClient extends AppEngBase {
      * This modifier key has to be held to activate mouse wheel items.
      */
     private static final KeyMapping MOUSE_WHEEL_ITEM_MODIFIER = new KeyMapping(
-            "key.ae2.mouse_wheel_item_modifier", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM,
+            "key.ae2.mouse_wheel_item_modifier", InputConstants.Type.KEYSYM,
             InputConstants.KEY_LSHIFT, Hotkeys.CATEGORY);
 
     private static final KeyMapping PART_PLACEMENT_OPPOSITE = new KeyMapping(
-            "key.ae2.part_placement_opposite", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM,
+            "key.ae2.part_placement_opposite", InputConstants.Type.KEYSYM,
             InputConstants.KEY_LCONTROL, Hotkeys.CATEGORY);
 
     private static AppEngClient INSTANCE;
@@ -281,8 +278,7 @@ public class AppEngClient extends AppEngBase {
 
         RenderBlockOutlineHook.install();
 
-        var areaOverlayRenderer = new AreaOverlayRenderer();
-        NeoForge.EVENT_BUS.register(areaOverlayRenderer);
+        // Area overlays (spatial/wireless range previews) are not yet rendered on Fabric
 
         modEventBus.addListener(this::registerPartRenderers);
         modEventBus.addListener(this::registerPartModelTypes);
@@ -380,7 +376,7 @@ public class AppEngClient extends AppEngBase {
     }
 
     private void ctrlEvent(InputEvent.Key event) {
-        if (event.getKey() == PART_PLACEMENT_OPPOSITE.getKey().getValue()) {
+        if (event.getKey() == net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper.getBoundKeyOf(PART_PLACEMENT_OPPOSITE).getValue()) {
             var player = Minecraft.getInstance().player;
 
             if (player != null) {
@@ -634,6 +630,5 @@ public class AppEngClient extends AppEngBase {
     }
 
     private void registerPipRenderers(RegisterPictureInPictureRenderersEvent event) {
-        event.register(FluidBlockPictureInPictureRenderer.State.class, FluidBlockPictureInPictureRenderer::new);
     }
 }

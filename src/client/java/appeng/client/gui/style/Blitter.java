@@ -45,7 +45,7 @@ import appeng.util.Icon;
  * Utility class for drawing rectangular textures in the UI.
  */
 public final class Blitter {
-    public static final RenderPipeline GUI_TEXTURED_OPAQUE = RenderPipelines.GUI_TEXTURED.toBuilder()
+    public static final RenderPipeline GUI_TEXTURED_OPAQUE = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
             .withLocation(AppEng.makeId("pipeline/gui_textured_opaque"))
             .withColorTargetState(ColorTargetState.DEFAULT)
             .build();
@@ -325,7 +325,7 @@ public final class Blitter {
 
         var pipeline = blending ? RenderPipelines.GUI_TEXTURED : GUI_TEXTURED_OPAQUE;
         var texture = Minecraft.getInstance().getTextureManager().getTexture(this.texture);
-        guiGraphics.submitGuiElementRenderState(new BlitRenderState(
+        guiGraphics.guiRenderState.addGuiElement(new BlitRenderState(
                 pipeline,
                 TextureSetup.singleTexture(texture.getTextureView(), texture.getSampler()),
                 new Matrix3x2f(guiGraphics.pose()),
@@ -334,7 +334,7 @@ public final class Blitter {
                 minU, maxU,
                 minV, maxV,
                 ARGB.color(a, r, g, b),
-                guiGraphics.peekScissorStack()));
+                guiGraphics.scissorStack.peek()));
 
     }
 

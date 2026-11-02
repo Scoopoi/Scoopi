@@ -21,7 +21,7 @@ public final class AERenderPipelines {
     /**
      * Similar to {@link RenderPipelines#LINES}, but with inverted depth test.
      */
-    public static final RenderPipeline LINES_BEHIND_BLOCK = RenderPipelines.LINES.toBuilder()
+    public static final RenderPipeline LINES_BEHIND_BLOCK = RenderPipeline.builder(RenderPipelines.LINES_SNIPPET)
             .withLocation(AppEng.makeId("pipeline/lines_behind_block"))
             .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN, false))
             .build();

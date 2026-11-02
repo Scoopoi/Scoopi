@@ -877,7 +877,6 @@ public class MutableQuad {
         tintIndex = materialInfo.tintIndex();
         shade = materialInfo.shade();
         lightEmission = materialInfo.lightEmission();
-        ambientOcclusion = materialInfo.ambientOcclusion();
         return this;
     }
 
@@ -937,12 +936,11 @@ public class MutableQuad {
                     itemRenderType == srcInfo.itemRenderType() &&
                     tintIndex == srcInfo.tintIndex() &&
                     shade == srcInfo.shade() &&
-                    lightEmission == srcInfo.lightEmission() &&
-                    ambientOcclusion == srcInfo.ambientOcclusion();
+                    lightEmission == srcInfo.lightEmission();
             if (canReuseMaterialInfo) {
                 materialInfo = srcInfo;
             } else {
-                materialInfo = new BakedQuad.MaterialInfo(sprite, chunkLayer, itemRenderType, tintIndex, shade, lightEmission, ambientOcclusion);
+                materialInfo = new BakedQuad.MaterialInfo(sprite, chunkLayer, itemRenderType, tintIndex, shade, lightEmission);
             }
 
         } else {
@@ -950,7 +948,7 @@ public class MutableQuad {
             pos1 = new Vector3f(positions[1]);
             pos2 = new Vector3f(positions[2]);
             pos3 = new Vector3f(positions[3]);
-            materialInfo = new BakedQuad.MaterialInfo(sprite, chunkLayer, itemRenderType, tintIndex, shade, lightEmission, ambientOcclusion);
+            materialInfo = new BakedQuad.MaterialInfo(sprite, chunkLayer, itemRenderType, tintIndex, shade, lightEmission);
         }
 
         return new BakedQuad(
@@ -1007,7 +1005,7 @@ public class MutableQuad {
      * @see FaceBakery#recalculateWinding
      */
     public MutableQuad recalculateWinding() {
-        FaceBakery.recalculateWinding(positions, uvs, direction, colors, normals);
+        appeng.fabric.client.ShimFaceBakery.recalculateWinding(positions, uvs, direction);
         return this;
     }
 

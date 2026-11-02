@@ -10,14 +10,13 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
 import net.minecraft.client.renderer.state.level.WeatherRenderState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.ExtractLevelRenderStateEvent;
 import net.neoforged.neoforge.client.event.RegisterCustomEnvironmentEffectRendererEvent;
 
 /**
  * A custom renderer for snow and rain that can be registered using {@link RegisterCustomEnvironmentEffectRendererEvent#registerWeatherEffectRenderer}
  * and used with {@link net.neoforged.neoforge.common.world.NeoForgeEnvironmentAttributes#CUSTOM_WEATHER_EFFECTS}.
  * <p>
- * Custom render state needed for the various render methods must be extracted via {@link ExtractLevelRenderStateEvent}
+ * Custom render state needed for the various render methods must be extracted via ExtractLevelRenderStateEvent
  * and stored in the provided {@link LevelRenderState}.
  *
  * @see RegisterCustomEnvironmentEffectRendererEvent#registerWeatherEffectRenderer

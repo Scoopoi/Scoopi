@@ -247,7 +247,6 @@ public class FacadeBuilder {
                             // side the facade is attached to, but clear it for anything that faces inwards
                             quad.setDirection(originalQuad.direction());
                             quad.setShade(originalQuad.materialInfo().shade());
-                            quad.setAmbientOcclusion(originalQuad.materialInfo().ambientOcclusion());
                             interpolator.setInputQuad(quad);
 
                             QuadClamper clamper = new QuadClamper(box);
@@ -302,11 +301,6 @@ public class FacadeBuilder {
         @Override
         public boolean useAmbientOcclusion() {
             return originalPart.useAmbientOcclusion();
-        }
-
-        @Override
-        public TriState ambientOcclusion() {
-            return originalPart.ambientOcclusion();
         }
 
         @Override

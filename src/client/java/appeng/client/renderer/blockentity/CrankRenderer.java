@@ -54,8 +54,7 @@ public class CrankRenderer implements BlockEntityRenderer<CrankBlockEntity, Cran
 
         state.orientation = BlockOrientation.get(be);
         state.visibleRotation = be.getVisibleRotation();
-        var parts = state.modelRenderState.setupModel(new Matrix4f(), handleModel.hasMaterialFlag(
-                (BlockAndTintGetter) be.getLevel(), be.getBlockPos(), be.getBlockState(), BakedQuad.FLAG_TRANSLUCENT));
+        var parts = state.modelRenderState.setupModel(new Matrix4f(), handleModel.hasMaterialFlag((BlockAndTintGetter) be.getLevel(), be.getBlockPos(), be.getBlockState(), net.minecraft.util.RandomSource.create(42L), BakedQuad.FLAG_TRANSLUCENT));
         handleModel.collectParts((BlockAndTintGetter) be.getLevel(), be.getBlockPos(), be.getBlockState(),
                 state.modelRenderState.scratchRandomSource(42L), parts);
     }

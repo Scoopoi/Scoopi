@@ -32,8 +32,7 @@ public interface BasicUnbakedModel extends UnbakedModel {
         return Collections.emptyList();
     }
 
-    @Override
-    default void resolveDependencies(Resolver resolver) {
+    default void resolveDependencies(net.minecraft.client.resources.model.ResolvableModel.Resolver resolver) {
         for (Identifier dependency : getDependencies()) {
             resolver.markDependency(dependency);
         }

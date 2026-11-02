@@ -65,8 +65,8 @@ public class TinyTNTPrimedRenderer extends EntityRenderer<TinyTNTPrimedEntity, T
         poseStack.translate(0, 0.5F, 0);
         float f2;
 
-        if (renderState.fuseRemainingInTicks - renderState.partialTick + 1.0F < 10.0F) {
-            f2 = 1.0F - (renderState.fuseRemainingInTicks - renderState.partialTick + 1.0F) / 10.0F;
+        if (renderState.fuseRemainingInTicks - (renderState.ageInTicks % 1.0F) + 1.0F < 10.0F) {
+            f2 = 1.0F - (renderState.fuseRemainingInTicks - (renderState.ageInTicks % 1.0F) + 1.0F) / 10.0F;
 
             if (f2 < 0.0F) {
                 f2 = 0.0F;

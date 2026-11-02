@@ -105,8 +105,7 @@ public class MEChestRenderer implements BlockEntityRenderer<MEChestBlockEntity, 
         }
         var model = modelManager.getModel(cellModelKey.fabricKey());
         var blockAndTintGetter = (BlockAndTintGetter) be.getLevel();
-        var modelParts = state.cellModel.setupModel(IDENTITY, model.hasMaterialFlag(blockAndTintGetter,
-                be.getBlockPos(), be.getBlockState(), BakedQuad.FLAG_TRANSLUCENT));
+        var modelParts = state.cellModel.setupModel(IDENTITY, model.hasMaterialFlag(blockAndTintGetter, be.getBlockPos(), be.getBlockState(), net.minecraft.util.RandomSource.create(42L), BakedQuad.FLAG_TRANSLUCENT));
         model.collectParts(blockAndTintGetter, be.getBlockPos(), be.getBlockState(),
                 state.cellModel.scratchRandomSource(42L), modelParts);
     }
