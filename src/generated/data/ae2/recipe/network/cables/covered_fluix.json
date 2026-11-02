@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "#minecraft:wool",
+    "ae2:fluix_glass_cable"
+  ],
+  "result": {
+    "id": "ae2:fluix_covered_cable"
+  }
+}

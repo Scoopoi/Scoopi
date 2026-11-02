@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "ae2:me_chest",
+    "ae2:cell_component_256k",
+    "ae2:energy_cell",
+    "ae2:fluid_cell_housing"
+  ],
+  "result": {
+    "id": "ae2:portable_fluid_cell_256k"
+  }
+}

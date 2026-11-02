@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "a": "#c:gems/certus_quartz",
+    "b": "#c:rods/wooden"
+  },
+  "pattern": [
+    "aaa",
+    " b ",
+    " b "
+  ],
+  "result": {
+    "id": "ae2:certus_quartz_pickaxe"
+  }
+}

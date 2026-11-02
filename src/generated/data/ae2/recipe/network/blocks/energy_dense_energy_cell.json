@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "a": "ae2:energy_cell",
+    "b": "ae2:calculation_processor"
+  },
+  "pattern": [
+    "aaa",
+    "aba",
+    "aaa"
+  ],
+  "result": {
+    "id": "ae2:dense_energy_cell"
+  }
+}

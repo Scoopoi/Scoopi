@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "ae2:crafting_unit",
+    "ae2:cell_component_16k"
+  ],
+  "result": {
+    "id": "ae2:16k_crafting_storage"
+  }
+}

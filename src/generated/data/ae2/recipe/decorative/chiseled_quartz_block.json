@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "a": "ae2:cut_quartz_slab"
+  },
+  "pattern": [
+    "a",
+    "a"
+  ],
+  "result": {
+    "id": "ae2:chiseled_quartz_block"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "ae2:monitor"
+  ],
+  "result": {
+    "id": "ae2:dark_monitor"
+  }
+}

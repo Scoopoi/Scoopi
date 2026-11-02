@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "ae2:cable_pattern_provider"
+  ],
+  "result": {
+    "id": "ae2:pattern_provider"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "a": "ae2:wireless_receiver",
+    "b": "ae2:calculation_processor",
+    "c": "ae2:fluix_glass_cable"
+  },
+  "pattern": [
+    "a",
+    "b",
+    "c"
+  ],
+  "result": {
+    "id": "ae2:wireless_access_point"
+  }
+}

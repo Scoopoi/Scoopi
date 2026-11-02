@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "a": "ae2:quartz_glass",
+    "b": "ae2:fluix_pearl"
+  },
+  "pattern": [
+    "aba",
+    "b b",
+    "aba"
+  ],
+  "result": {
+    "id": "ae2:quantum_link"
+  }
+}

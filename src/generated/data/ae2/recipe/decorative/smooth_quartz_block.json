@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smelting",
+  "category": "blocks",
+  "experience": 0.1,
+  "ingredient": "ae2:cut_quartz_block",
+  "result": {
+    "id": "ae2:smooth_quartz_block"
+  }
+}

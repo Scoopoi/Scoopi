@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:smelting",
+  "category": "blocks",
+  "ingredient": "ae2:sky_dust",
+  "result": {
+    "id": "ae2:sky_stone_block"
+  }
+}

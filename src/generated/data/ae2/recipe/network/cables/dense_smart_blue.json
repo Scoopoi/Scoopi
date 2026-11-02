@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "a": "ae2:fluix_smart_dense_cable",
+    "b": "#c:dyes/blue"
+  },
+  "pattern": [
+    "aaa",
+    "aba",
+    "aaa"
+  ],
+  "result": {
+    "count": 8,
+    "id": "ae2:blue_smart_dense_cable"
+  }
+}
