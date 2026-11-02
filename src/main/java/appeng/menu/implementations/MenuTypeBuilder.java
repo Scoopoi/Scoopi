@@ -36,7 +36,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 
 import appeng.core.AppEng;
 import appeng.init.InitMenuTypes;
@@ -113,7 +112,9 @@ public final class MenuTypeBuilder<M extends AEBaseMenu, I> {
      * Opens a menu that is based around a single block entity. The block entity's position is encoded in the packet
      * buffer.
      */
-    private M fromNetwork(int containerId, Inventory inv, RegistryFriendlyByteBuf packetBuf) {
+    private M fromNetwork(int containerId, Inventory inv, byte[] data) {
+        var packetBuf = new RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.wrappedBuffer(data),
+                inv.player.registryAccess());
         var locator = MenuLocators.readFromPacket(packetBuf);
         I host = locator.locate(inv.player, hostInterface);
         if (host == null) {
@@ -141,7 +142,7 @@ public final class MenuTypeBuilder<M extends AEBaseMenu, I> {
 
         Component title = menuTitleStrategy.apply(accessInterface);
 
-        class AppEngMenuProvider implements MenuProvider {
+        class AppEngMenuProvider implements net.fabricmc.fabric.api.menu.v1.ExtendedMenuProvider<byte[]> {
             @Override
             public Component getDisplayName() {
                 return title;
@@ -158,20 +159,32 @@ public final class MenuTypeBuilder<M extends AEBaseMenu, I> {
             }
 
             @Override
-            public boolean shouldTriggerClientSideContainerClosingOnOpen() {
+            public byte[] getScreenOpeningData(ServerPlayer serverPlayer) {
+                var buffer = new RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(),
+                        serverPlayer.registryAccess());
+                try {
+                    MenuLocators.writeToPacket(buffer, locator);
+                    buffer.writeBoolean(fromSubMenu);
+
+                    if (initialDataSerializer != null) {
+                        initialDataSerializer.serializeInitialData(accessInterface, buffer);
+                    }
+                    var bytes = new byte[buffer.readableBytes()];
+                    buffer.readBytes(bytes);
+                    return bytes;
+                } finally {
+                    buffer.release();
+                }
+            }
+
+            @Override
+            public boolean shouldCloseCurrentScreen() {
                 // Do not send close packets when switching between AE menus
                 return !(player.containerMenu instanceof AEBaseMenu);
             }
         }
 
-        player.openMenu(new AppEngMenuProvider(), buffer -> {
-            MenuLocators.writeToPacket(buffer, locator);
-            buffer.writeBoolean(fromSubMenu);
-
-            if (initialDataSerializer != null) {
-                initialDataSerializer.serializeInitialData(accessInterface, buffer);
-            }
-        });
+        player.openMenu(new AppEngMenuProvider());
 
         return true;
     }
@@ -188,7 +201,8 @@ public final class MenuTypeBuilder<M extends AEBaseMenu, I> {
         Preconditions.checkState(this.id == null, "id should not be set");
 
         this.id = id;
-        menuType = IMenuTypeExtension.create(this::fromNetwork);
+        menuType = new net.fabricmc.fabric.api.menu.v1.ExtendedMenuType<>(this::fromNetwork,
+                net.minecraft.network.codec.ByteBufCodecs.BYTE_ARRAY);
         MenuOpener.addOpener(menuType, this::open);
         return menuType;
     }

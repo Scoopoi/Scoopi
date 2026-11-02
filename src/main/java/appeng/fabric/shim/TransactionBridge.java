@@ -63,12 +63,10 @@ public final class TransactionBridge {
             var entry = list.get(i);
             if (entry.neo == neo) {
                 list.remove(i);
-                if (entry.fabric.isOpen()) {
-                    if (aborted) {
-                        entry.fabric.abort();
-                    } else {
-                        entry.fabric.commit();
-                    }
+                if (aborted) {
+                    entry.fabric.abort();
+                } else {
+                    entry.fabric.commit();
                 }
                 return;
             }

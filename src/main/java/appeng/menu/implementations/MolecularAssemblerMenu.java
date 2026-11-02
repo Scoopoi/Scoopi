@@ -101,12 +101,12 @@ public class MolecularAssemblerMenu extends UpgradeableMenu<MolecularAssemblerBl
                         continue;
                     }
 
-                    var mask = 1 << patternSlot.getSlotIndex();
-                    if (pattern.isSlotEnabled(patternSlot.getSlotIndex())) {
+                    var mask = 1 << patternSlot.getContainerSlot();
+                    if (pattern.isSlotEnabled(patternSlot.getContainerSlot())) {
                         enabledSlots |= mask;
 
                         var currentItem = slot.getItem();
-                        if (!currentItem.isEmpty() && !isValidItemForSlot(slot.getSlotIndex(), currentItem)) {
+                        if (!currentItem.isEmpty() && !isValidItemForSlot(slot.getContainerSlot(), currentItem)) {
                             invalidSlots |= mask;
                         }
                     }

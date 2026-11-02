@@ -31,7 +31,7 @@ import net.neoforged.fml.event.IModBusEvent;
 public class NewRegistryEvent extends Event implements IModBusEvent {
     private final List<Registry<?>> registries = new ArrayList<>();
 
-    NewRegistryEvent() {}
+    public NewRegistryEvent() {}
 
     /**
      * Creates a registry using the {@code builder} and registers it.

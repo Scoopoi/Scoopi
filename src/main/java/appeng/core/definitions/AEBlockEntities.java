@@ -229,7 +229,7 @@ public final class AEBlockEntities {
                     .map(BlockDefinition::block)
                     .toArray(AEBaseEntityBlock[]::new);
 
-            var type = new BlockEntityType<>(supplier, blocks);
+            var type = new BlockEntityType<>(supplier, java.util.Set.<net.minecraft.world.level.block.Block>of(blocks));
             typeHolder.setPlain(type); // Makes it available to the supplier used above
 
             AEBaseBlockEntity.registerBlockEntityItem(type, blockDefinitions[0].asItem());

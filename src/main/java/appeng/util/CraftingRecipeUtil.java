@@ -58,7 +58,7 @@ public final class CraftingRecipeUtil {
     public static ItemStack getResult(Recipe<?> recipe) {
         var displays = recipe.display();
         for (var display : displays) {
-            var stack = display.result().resolveForFirstStack(ContextMap.EMPTY);
+            var stack = display.result().resolveForFirstStack(new ContextMap.Builder().create(net.minecraft.world.item.crafting.display.SlotDisplayContext.CONTEXT));
             if (!stack.isEmpty()) {
                 return stack;
             }

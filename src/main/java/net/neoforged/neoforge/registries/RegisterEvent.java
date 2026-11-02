@@ -28,7 +28,7 @@ public class RegisterEvent extends Event implements IModBusEvent {
     private final ResourceKey<? extends Registry<?>> registryKey;
     private final Registry<?> registry;
 
-    RegisterEvent(ResourceKey<? extends Registry<?>> registryKey, Registry<?> registry) {
+    public RegisterEvent(ResourceKey<? extends Registry<?>> registryKey, Registry<?> registry) {
         this.registryKey = registryKey;
         this.registry = registry;
     }

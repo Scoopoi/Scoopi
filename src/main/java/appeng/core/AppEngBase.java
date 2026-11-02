@@ -139,9 +139,7 @@ public abstract class AppEngBase implements AppEng {
         AEAttachmentTypes.register(modEventBus);
 
         modEventBus.addListener(this::registerRegistries);
-        modEventBus.addListener(MainCreativeTab::initExternal);
         modEventBus.addListener(InitNetwork::init);
-        modEventBus.addListener(ChunkLoadingService.getInstance()::register);
         modEventBus.addListener(EventPriority.HIGH, InitCapabilityProviders::markProxyableCapabilities);
         modEventBus.addListener(InitCapabilityProviders::register);
         modEventBus.addListener(EventPriority.LOWEST, InitCapabilityProviders::registerGenericAdapters);
@@ -225,6 +223,8 @@ public abstract class AppEngBase implements AppEng {
         InitDispenserBehavior.init();
 
         InitUpgrades.init();
+
+        MainCreativeTab.initExternal();
     }
 
     public void registerKeyTypes(Registry<AEKeyType> registry) {

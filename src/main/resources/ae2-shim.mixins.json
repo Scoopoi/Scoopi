@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "appeng.mixins.shim",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "BlockEntityExtensionMixin",
+    "BlockExtensionMixin",
+    "BlockGetterExtensionMixin",
+    "FluidExtensionMixin",
+    "ItemExtensionMixin",
+    "ItemStackExtensionMixin",
+    "LevelChunkCapabilityMixin",
+    "LevelExtensionMixin",
+    "RecipeManagerAccessor",
+    "ServerThreadGroupMixin"
+  ],
+  "client": [
+    "BlockStateModelExtensionMixin",
+    "KeyboardHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

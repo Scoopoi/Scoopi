@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "type": "ae2:quartz_glass"
+      "fabric:type": "ae2:quartz_glass"
     }
   }
 }

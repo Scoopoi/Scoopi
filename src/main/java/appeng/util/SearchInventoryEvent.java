@@ -8,7 +8,6 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
-import appeng.integration.modules.curios.CuriosIntegration;
 
 /**
  * Event fired when AE2 is looking for ItemStacks in a player inventory. By default, AE2 only looks at the 36 usual
@@ -30,14 +29,6 @@ public class SearchInventoryEvent extends PlayerEvent {
     static {
         NeoForge.EVENT_BUS.addListener((SearchInventoryEvent event) -> {
             event.getStacks().addAll(event.getEntity().getInventory().getNonEquipmentItems());
-        });
-        NeoForge.EVENT_BUS.addListener((SearchInventoryEvent event) -> {
-            var cap = event.getEntity().getCapability(CuriosIntegration.ITEM_HANDLER);
-            if (cap == null)
-                return;
-            for (int i = 0; i < cap.size(); i++) {
-                event.getStacks().add(cap.getResource(i).toStack());
-            }
         });
     }
 

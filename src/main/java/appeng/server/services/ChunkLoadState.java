@@ -36,15 +36,21 @@ class ChunkLoadState extends SavedData {
                 .apply(builder, ForcedChunk::new));
     }
 
-    private static final SavedDataType<ChunkLoadState> TYPE = new SavedDataType<>(
-            AppEng.makeId("chunk_load_state"),
-            ChunkLoadState::new,
-            level -> RecordCodecBuilder.create(builder -> builder.group(
-                    ForcedChunk.CODEC.listOf().fieldOf("forcedChunks").forGetter(ChunkLoadState::getForcedChunks))
-                    .apply(builder, data -> new ChunkLoadState(level, data))));
+    // Fabric port: vanilla SavedDataType has no level context, so we create one type per level.
+    private static final java.util.Map<ServerLevel, SavedDataType<ChunkLoadState>> TYPES = new java.util.WeakHashMap<>();
+
+    private static synchronized SavedDataType<ChunkLoadState> type(ServerLevel level) {
+        return TYPES.computeIfAbsent(level, l -> new SavedDataType<>(
+                AppEng.makeId("chunk_load_state"),
+                () -> new ChunkLoadState(l),
+                RecordCodecBuilder.create(builder -> builder.group(
+                        ForcedChunk.CODEC.listOf().fieldOf("forcedChunks").forGetter(ChunkLoadState::getForcedChunks))
+                        .apply(builder, data -> new ChunkLoadState(l, data))),
+                null));
+    }
 
     public static ChunkLoadState get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(TYPE);
+        return level.getDataStorage().computeIfAbsent(type(level));
     }
 
     private final ServerLevel level;

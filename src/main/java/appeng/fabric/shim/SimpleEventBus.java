@@ -107,7 +107,7 @@ public class SimpleEventBus implements IEventBus {
     @Override
     public <T extends Event> void addListener(EventPriority priority, boolean receiveCanceled, Consumer<T> consumer) {
         Class<?> type = resolveType(consumer);
-        add(new Listener(type, priority, receiveCanceled, (Consumer<Object>) consumer, null, nextOrder()));
+        add(new Listener(type, priority, receiveCanceled, (Consumer<Object>) (Consumer<?>) consumer, null, nextOrder()));
     }
 
     @Override
@@ -118,7 +118,7 @@ public class SimpleEventBus implements IEventBus {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Event> void addListener(EventPriority priority, Class<T> eventType, Consumer<T> consumer) {
-        add(new Listener(eventType, priority, false, (Consumer<Object>) consumer, null, nextOrder()));
+        add(new Listener(eventType, priority, false, (Consumer<Object>) (Consumer<?>) consumer, null, nextOrder()));
     }
 
     @Override

@@ -64,8 +64,8 @@ public final class ParticleTypes {
             return LightningArcParticleData.STREAM_CODEC;
         }
     };
-    public static final SimpleParticleType LIGHTNING = new SimpleParticleType(false);
-    public static final SimpleParticleType MATTER_CANNON = new SimpleParticleType(false);
-    public static final SimpleParticleType VIBRANT = new SimpleParticleType(false);
+    public static final SimpleParticleType LIGHTNING = net.fabricmc.fabric.api.particle.v1.FabricParticleTypes.simple(false);
+    public static final SimpleParticleType MATTER_CANNON = net.fabricmc.fabric.api.particle.v1.FabricParticleTypes.simple(false);
+    public static final SimpleParticleType VIBRANT = net.fabricmc.fabric.api.particle.v1.FabricParticleTypes.simple(false);
 
 }

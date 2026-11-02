@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "ae2",
+  "version": "${version}",
+  "name": "Applied Energistics 2 (Fabric)",
+  "description": "Unofficial Fabric port of Applied Energistics 2. A Mod about Matter, Energy and using them to conquer the world...",
+  "authors": [
+    "Team AppliedEnergistics",
+    "Fabric port contributors"
+  ],
+  "contact": {
+    "homepage": "https://appliedenergistics.org",
+    "sources": "https://github.com/AppliedEnergistics/Applied-Energistics-2"
+  },
+  "license": "LGPL-3.0-only",
+  "icon": "logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "appeng.fabric.AE2FabricMod"
+    ],
+    "client": [
+      "appeng.fabric.AE2FabricClient"
+    ]
+  },
+  "mixins": [
+    "ae2.mixins.json",
+    "ae2-shim.mixins.json"
+  ],
+  "accessWidener": "ae2.classtweaker",
+  "depends": {
+    "fabricloader": ">=0.20.0",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  },
+  "custom": {
+    "loom:injected_interfaces": {
+      "net/minecraft/world/level/Level": [
+        "net/neoforged/neoforge/common/extensions/ILevelExtension"
+      ],
+      "net/minecraft/world/level/BlockGetter": [
+        "net/neoforged/neoforge/common/extensions/IBlockGetterExtension"
+      ],
+      "net/minecraft/world/level/block/entity/BlockEntity": [
+        "net/neoforged/neoforge/common/extensions/IBlockEntityExtension"
+      ],
+      "net/minecraft/world/item/ItemStack": [
+        "net/neoforged/neoforge/common/extensions/IItemStackExtension"
+      ],
+      "net/minecraft/world/item/Item": [
+        "net/neoforged/neoforge/common/extensions/IItemExtension"
+      ],
+      "net/minecraft/world/level/block/Block": [
+        "net/neoforged/neoforge/common/extensions/IBlockExtension"
+      ],
+      "net/minecraft/world/level/material/Fluid": [
+        "net/neoforged/neoforge/common/extensions/IFluidExtension"
+      ],
+      "net/minecraft/world/item/crafting/RecipeManager": [
+        "net/neoforged/neoforge/common/extensions/IRecipeManagerExtension"
+      ],
+      "net/minecraft/client/renderer/block/dispatch/BlockStateModel": [
+        "net/neoforged/neoforge/client/extensions/IBlockStateModelExtension"
+      ]
+    }
+  }
+}

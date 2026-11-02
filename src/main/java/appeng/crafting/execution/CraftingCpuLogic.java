@@ -556,7 +556,7 @@ public class CraftingCpuLogic {
                     job.finalOutput.amount(),
                     job.remainingAmount,
                     status);
-            connectedPlayer.connection.send(message);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(connectedPlayer, message);
         }
     }
 }

@@ -344,7 +344,7 @@ public class PatternAccessTermScreen<C extends PatternAccessTermMenu> extends AE
 
             if (action != null) {
                 PatternSlot machineSlot = (PatternSlot) slot;
-                final InventoryActionPacket p = new InventoryActionPacket(action, machineSlot.getSlotIndex(),
+                final InventoryActionPacket p = new InventoryActionPacket(action, machineSlot.getContainerSlot(),
                         machineSlot.getMachineInv().getServerId());
                 ClientPacketDistributor.sendToServer(p);
             }

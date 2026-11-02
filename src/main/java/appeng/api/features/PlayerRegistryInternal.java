@@ -57,12 +57,18 @@ final class PlayerRegistryInternal extends SavedData implements IPlayerRegistry 
                     UUIDUtil.CODEC.listOf().fieldOf("profile_ids").forGetter(PlayerRegistryData::profileIds))
                     .apply(builder, PlayerRegistryData::new));
 
-    private static final SavedDataType<PlayerRegistryInternal> TYPE = new SavedDataType<>(
-            ID,
-            level -> new PlayerRegistryInternal(level.getServer()),
-            level -> RecordCodecBuilder.create(builder -> builder.group(
-                    PLAYER_REGISTRY_DATA_CODEC.fieldOf("players").forGetter(PlayerRegistryInternal::getData))
-                    .apply(builder, data -> new PlayerRegistryInternal(level.getServer(), data))));
+    // Fabric port: vanilla SavedDataType has no level context, so we create one type per server.
+    private static final java.util.Map<MinecraftServer, SavedDataType<PlayerRegistryInternal>> TYPES = new java.util.WeakHashMap<>();
+
+    private static synchronized SavedDataType<PlayerRegistryInternal> type(MinecraftServer server) {
+        return TYPES.computeIfAbsent(server, s -> new SavedDataType<>(
+                ID,
+                () -> new PlayerRegistryInternal(s),
+                RecordCodecBuilder.create(builder -> builder.group(
+                        PLAYER_REGISTRY_DATA_CODEC.fieldOf("players").forGetter(PlayerRegistryInternal::getData))
+                        .apply(builder, data -> new PlayerRegistryInternal(s, data))),
+                null));
+    }
 
     private final BiMap<UUID, Integer> mapping = HashBiMap.create();
 
@@ -96,7 +102,7 @@ final class PlayerRegistryInternal extends SavedData implements IPlayerRegistry 
         if (overworld == null) {
             throw new IllegalStateException("Cannot retrieve player data for a server that has no overworld.");
         }
-        return overworld.getDataStorage().computeIfAbsent(TYPE);
+        return overworld.getDataStorage().computeIfAbsent(type(server));
     }
 
     @Nullable

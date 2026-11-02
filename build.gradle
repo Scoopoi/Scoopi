@@ -20,7 +20,7 @@ sourceSets {
         }
         resources {
             srcDir 'src/client/resources'
-            srcDir 'src/generated/resources'
+            srcDir 'src/generated'
         }
     }
 }

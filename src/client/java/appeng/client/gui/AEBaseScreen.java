@@ -65,7 +65,6 @@ import guideme.PageAnchor;
 import guideme.color.SymbolicColor;
 import guideme.compiler.IdUtils;
 import guideme.document.DefaultStyles;
-import guideme.indices.ItemIndex;
 import guideme.style.ResolvedTextStyle;
 import guideme.style.TextStyle;
 
@@ -257,7 +256,7 @@ public abstract class AEBaseScreen<T extends AEBaseMenu> extends AbstractContain
      */
     @MustBeInvokedByOverriders
     protected void updateBeforeRender() {
-        helpButton.setVisibility(getHelpTopic() != null);
+        helpButton.setVisibility(false); // GuideME is not available on Fabric
     }
 
     @Override
@@ -300,7 +299,7 @@ public abstract class AEBaseScreen<T extends AEBaseMenu> extends AbstractContain
         var emptyingAction = ContainerItemStrategies.getEmptyingAction(carried);
         if (emptyingAction != null) {
             var wrappedStack = GenericStack.wrapInItemStack(new GenericStack(emptyingAction.what(), 1));
-            if (configInv.isItemValid(slot.getSlotIndex(), wrappedStack)) {
+            if (configInv.isItemValid(slot.getContainerSlot(), wrappedStack)) {
                 return emptyingAction;
             }
         }
@@ -780,7 +779,7 @@ public abstract class AEBaseScreen<T extends AEBaseMenu> extends AbstractContain
                 if (getMinecraft().options.keyHotbarSlots[j].matches(event)) {
                     final List<Slot> slots = this.getInventorySlots();
                     for (Slot s : slots) {
-                        if (s.getSlotIndex() == j && s.container == this.menu.getPlayerInventory()
+                        if (s.getContainerSlot() == j && s.container == this.menu.getPlayerInventory()
                                 && !s.mayPickup(this.menu.getPlayerInventory().player)) {
                             return false;
                         }
@@ -791,7 +790,7 @@ public abstract class AEBaseScreen<T extends AEBaseMenu> extends AbstractContain
                         return true;
                     } else {
                         for (Slot s : slots) {
-                            if (s.getSlotIndex() == j
+                            if (s.getContainerSlot() == j
                                     && s.container == this.menu.getPlayerInventory()) {
                                 ServerboundPacket message = new SwapSlotsPacket(s.index, theSlot.index);
                                 ClientPacketDistributor.sendToServer(message);
@@ -1106,24 +1105,7 @@ public abstract class AEBaseScreen<T extends AEBaseMenu> extends AbstractContain
             }
         }
 
-        // Try finding the help topic automatically via the guidebook item index
-        var guide = AppEngClient.instance().getGuide();
-        var itemIndex = guide.getIndex(ItemIndex.class);
-
-        Object target = getMenu().getTarget();
-        if (target instanceof BlockEntity be) {
-            var block = be.getBlockState().getBlock();
-            var blockId = BuiltInRegistries.BLOCK.getKey(block);
-            return itemIndex.get(blockId);
-        } else if (target instanceof IPart part) {
-            var item = part.getPartItem().asItem();
-            var itemId = BuiltInRegistries.ITEM.getKey(item);
-            return itemIndex.get(itemId);
-        } else if (target instanceof ItemMenuHost<?> menuHost) {
-            var item = menuHost.getItem();
-            var itemId = BuiltInRegistries.ITEM.getKey(item);
-            return itemIndex.get(itemId);
-        }
+        // GuideME is not available on Fabric
         return null;
     }
 }

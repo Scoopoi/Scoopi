@@ -103,7 +103,7 @@ public class MEChestRenderer implements BlockEntityRenderer<MEChestBlockEntity, 
         if (cellModelKey == null) {
             cellModelKey = StorageCellModels.getDefaultStandaloneModel();
         }
-        var model = modelManager.getStandaloneModel(cellModelKey);
+        var model = modelManager.getModel(cellModelKey.fabricKey());
         var blockAndTintGetter = (BlockAndTintGetter) be.getLevel();
         var modelParts = state.cellModel.setupModel(IDENTITY, model.hasMaterialFlag(blockAndTintGetter,
                 be.getBlockPos(), be.getBlockState(), BakedQuad.FLAG_TRANSLUCENT));

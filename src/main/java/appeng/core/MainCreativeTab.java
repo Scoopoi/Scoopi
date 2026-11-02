@@ -43,7 +43,7 @@ public final class MainCreativeTab {
     private static final List<ItemDefinition<?>> itemDefs = new ArrayList<>();
 
     public static void init(Registry<CreativeModeTab> registry) {
-        var tab = CreativeModeTab.builder()
+        var tab = net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab.builder()
                 .title(GuiText.CreativeTab.text())
                 .icon(() -> AEBlocks.CONTROLLER.stack(1))
                 .displayItems(MainCreativeTab::buildDisplayItems)

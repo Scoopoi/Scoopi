@@ -33,6 +33,6 @@ public record UpdateHoldingCtrlPacket(boolean keyDown) implements ServerboundPac
 
     @Override
     public void handleOnServer(ServerPlayer player) {
-        player.setData(AEAttachmentTypes.HOLDING_CTRL, keyDown);
+        AEAttachmentTypes.setHoldingCtrl(player, keyDown);
     }
 }

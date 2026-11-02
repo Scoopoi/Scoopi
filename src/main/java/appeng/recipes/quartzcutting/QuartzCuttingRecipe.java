@@ -59,7 +59,7 @@ public class QuartzCuttingRecipe extends NormalCraftingRecipe {
         super(commonInfo, bookInfo);
         this.result = result;
         this.ingredients = ingredients;
-        this.isSimple = ingredients.stream().allMatch(Ingredient::isSimple);
+        this.isSimple = ingredients.stream().allMatch(i -> i.getCustomIngredient() == null);
     }
 
     public RecipeSerializer<QuartzCuttingRecipe> getSerializer() {

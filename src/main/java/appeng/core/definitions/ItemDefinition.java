@@ -66,7 +66,7 @@ public class ItemDefinition<T extends Item> implements ItemLike, Supplier<T> {
     }
 
     public ItemStackTemplate template(int stackSize) {
-        return new ItemStackTemplate(item, stackSize);
+        return new ItemStackTemplate(item.getDelegate(), stackSize, DataComponentPatch.EMPTY);
     }
 
     public ItemStackTemplate template(Consumer<DataComponentPatch.Builder> customizer) {
@@ -76,7 +76,7 @@ public class ItemDefinition<T extends Item> implements ItemLike, Supplier<T> {
     public ItemStackTemplate template(int stackSize, Consumer<DataComponentPatch.Builder> customizer) {
         var patch = DataComponentPatch.builder();
         customizer.accept(patch);
-        return new ItemStackTemplate(item, stackSize, patch.build());
+        return new ItemStackTemplate(item.getDelegate(), stackSize, patch.build());
     }
 
     public GenericStack genericStack(long stackSize) {
@@ -84,7 +84,7 @@ public class ItemDefinition<T extends Item> implements ItemLike, Supplier<T> {
     }
 
     public Holder<Item> holder() {
-        return item;
+        return item.getDelegate();
     }
 
     public Component getName() {

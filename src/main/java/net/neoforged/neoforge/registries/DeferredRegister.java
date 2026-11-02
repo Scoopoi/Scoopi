@@ -370,7 +370,7 @@ public class DeferredRegister<T> {
         }
         this.seenRegisterEvent = true;
         Registry<T> registry = event.getRegistry(this.registryKey);
-        this.aliases.forEach(registry::addAlias);
+        // Registry aliases are not supported on Fabric
         for (Entry<DeferredHolder<T, ? extends T>, Supplier<? extends T>> e : entries.entrySet()) {
             event.register(this.registryKey, e.getKey().getId(), () -> e.getValue().get());
             e.getKey().bind(false);

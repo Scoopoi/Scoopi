@@ -34,7 +34,13 @@ public final class AERecipeTypes {
             "storage_cell_disassembly");
 
     private static <T extends Recipe<?>> RecipeType<T> register(String id) {
-        RecipeType<T> type = RecipeType.simple(AppEng.makeId(id));
+        var typeId = AppEng.makeId(id);
+        RecipeType<T> type = new RecipeType<>() {
+            @Override
+            public String toString() {
+                return typeId.toString();
+            }
+        };
         DR.register(id, () -> type);
         return type;
     }

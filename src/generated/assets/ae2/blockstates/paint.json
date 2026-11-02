@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "type": "ae2:paint"
+      "fabric:type": "ae2:paint"
     }
   }
 }

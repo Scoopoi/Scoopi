@@ -14,7 +14,6 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.neoforged.neoforge.network.connection.ConnectionType;
 
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
@@ -194,8 +193,7 @@ public record MEInventoryUpdatePacket(
 
         private RegistryFriendlyByteBuf ensureData() {
             if (encodedEntries == null) {
-                encodedEntries = new RegistryFriendlyByteBuf(Unpooled.buffer(INITIAL_BUFFER_CAPACITY), registryAccess,
-                        ConnectionType.NEOFORGE);
+                encodedEntries = new RegistryFriendlyByteBuf(Unpooled.buffer(INITIAL_BUFFER_CAPACITY), registryAccess);
             }
             return encodedEntries;
         }

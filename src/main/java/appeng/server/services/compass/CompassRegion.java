@@ -60,7 +60,8 @@ final class CompassRegion extends SavedData {
                     () -> new CompassRegion(regionX, regionZ),
                     RecordCodecBuilder.create(builder -> builder.group(
                             SECTION_CODEC.listOf().fieldOf("sections").forGetter(CompassRegion::sections))
-                            .apply(builder, sections -> new CompassRegion(regionX, regionZ, sections)))));
+                            .apply(builder, sections -> new CompassRegion(regionX, regionZ, sections))),
+                    null));
 
     /**
      * The number of chunks that get saved in a region on each axis.

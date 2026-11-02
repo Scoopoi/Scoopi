@@ -36,13 +36,13 @@ public class MolecularAssemblerPatternSlot extends AppEngSlot implements IOption
 
     @Override
     public boolean mayPlace(ItemStack stack) {
-        return super.mayPlace(stack) && this.menu.isValidItemForSlot(this.getSlotIndex(), stack);
+        return super.mayPlace(stack) && this.menu.isValidItemForSlot(this.getContainerSlot(), stack);
     }
 
     @Override
     protected boolean getCurrentValidationState() {
         var stack = getItem();
-        return stack.isEmpty() || this.menu.isSlotValid(getSlotIndex());
+        return stack.isEmpty() || this.menu.isSlotValid(getContainerSlot());
     }
 
     @Override
@@ -53,11 +53,11 @@ public class MolecularAssemblerPatternSlot extends AppEngSlot implements IOption
     @Override
     public boolean isSlotEnabled() {
         // Always enabled when there's an item in the inventory (otherwise you can't take it out...)
-        if (!getInventory().getStackInSlot(getSlotIndex()).isEmpty()) {
+        if (!getInventory().getStackInSlot(getContainerSlot()).isEmpty()) {
             return true;
         }
 
-        return getSlotIndex() >= 0 && getSlotIndex() < 9 && menu.isInputSlotEnabled(getSlotIndex());
+        return getContainerSlot() >= 0 && getContainerSlot() < 9 && menu.isInputSlotEnabled(getContainerSlot());
     }
 
     @Override

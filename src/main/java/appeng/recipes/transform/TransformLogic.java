@@ -192,8 +192,8 @@ public final class TransformLogic {
                 if (!recipe.circumstance.isExplosion())
                     continue;
                 for (var ingredient : recipe.ingredients) {
-                    if (!ingredient.isCustom()) {
-                        holderSets.add(ingredient.getValues());
+                    if (ingredient.getCustomIngredient() == null) {
+                        holderSets.add(appeng.fabric.shim.ShimHooks.ingredientValues(ingredient));
                     } else {
                         LOG.warn("Custom ingredient {} does not work in explosion transform recipe {}", ingredient,
                                 holder.id());
@@ -237,8 +237,8 @@ public final class TransformLogic {
     private static boolean collectFirstNonCustomIngredient(TransformRecipe recipe, List<HolderSet<Item>> holderSets) {
         boolean hadAnyWorkingIngredient = false;
         for (var ingredient : recipe.ingredients) {
-            if (!ingredient.isCustom()) {
-                holderSets.add(ingredient.getValues());
+            if (ingredient.getCustomIngredient() == null) {
+                holderSets.add(appeng.fabric.shim.ShimHooks.ingredientValues(ingredient));
                 hadAnyWorkingIngredient = true;
                 break; // only process first ingredient (they're all required anyway)
             }

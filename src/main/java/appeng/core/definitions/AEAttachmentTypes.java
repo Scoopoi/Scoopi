@@ -1,22 +1,27 @@
 package appeng.core.definitions;
 
-import java.util.function.Supplier;
-
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.attachment.AttachmentType;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import appeng.core.AppEng;
 
+/**
+ * Fabric port: uses the Fabric Data Attachment API.
+ */
 public final class AEAttachmentTypes {
-    private static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES = DeferredRegister
-            .create(NeoForgeRegistries.ATTACHMENT_TYPES, AppEng.MOD_ID);
+    public static final AttachmentType<Boolean> HOLDING_CTRL = AttachmentRegistry.create(AppEng.makeId("ctrl"));
 
-    public static final Supplier<AttachmentType<Boolean>> HOLDING_CTRL = ATTACHMENT_TYPES.register("ctrl",
-            () -> AttachmentType.builder(() -> false).build());
+    public static boolean isHoldingCtrl(Player player) {
+        return player.getAttachedOrElse(HOLDING_CTRL, false);
+    }
+
+    public static void setHoldingCtrl(Player player, boolean value) {
+        player.setAttached(HOLDING_CTRL, value);
+    }
 
     public static void register(IEventBus modEventBus) {
-        ATTACHMENT_TYPES.register(modEventBus);
+        // Registered on class load
     }
 }

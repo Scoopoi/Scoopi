@@ -72,19 +72,12 @@ import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEven
 import net.neoforged.neoforge.client.event.RegisterRangeSelectItemModelPropertyEvent;
 import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.model.standalone.SimpleUnbakedStandaloneModel;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.client.resources.VanillaClientListeners;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.NeoForge;
 
-import guideme.Guide;
-import guideme.compiler.TagCompiler;
-import guideme.scene.ImplicitAnnotationStrategy;
-import guideme.siteexport.AdditionalResourceExporter;
-import guideme.siteexport.RecipeExporter;
 
 import appeng.api.client.StorageCellModels;
 import appeng.api.parts.CableRenderMode;
@@ -104,10 +97,6 @@ import appeng.client.commands.ClientCommands;
 import appeng.client.gui.me.common.PendingCraftingJobs;
 import appeng.client.gui.me.common.PinnedKeys;
 import appeng.client.gui.style.StyleManager;
-import appeng.client.guidebook.AEAdditionalExportData;
-import appeng.client.guidebook.AERecipeExporter;
-import appeng.client.guidebook.ConfigValueTagExtension;
-import appeng.client.guidebook.PartAnnotationStrategy;
 import appeng.client.hooks.BlockAttackHook;
 import appeng.client.hooks.RenderBlockOutlineHook;
 import appeng.client.integrations.itemlists.FluidBlockPictureInPictureRenderer;
@@ -239,7 +228,6 @@ public class AppEngClient extends AppEngBase {
     private RecipeMap recipeMap = RecipeMap.EMPTY;
     private final Set<RecipeType<?>> knownRecipeTypes = Collections.newSetFromMap(new IdentityHashMap<>());
 
-    private final Guide guide;
 
     private SpatialStorageSkyRenderer spatialStorageSkyRenderer;
 
@@ -256,7 +244,6 @@ public class AppEngClient extends AppEngBase {
         modEventBus.addListener(this::registerReloadListeners);
 
         BlockAttackHook.install();
-        guide = createGuide();
 
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, (ClientTickEvent.Pre e) -> {
             updateCableRenderMode();
@@ -274,8 +261,6 @@ public class AppEngClient extends AppEngBase {
             Hotkeys.checkHotkeys();
         });
 
-        container.registerExtensionPoint(IConfigScreenFactory.class,
-                (mc, parent) -> new ConfigurationScreen(container, parent));
 
         modEventBus.addListener(new AEClientboundPacketHandler()::register);
         modEventBus.addListener(this::registerEntityRenderers);
@@ -317,17 +302,6 @@ public class AppEngClient extends AppEngBase {
             }
             dispatcher.register(builder);
         });
-    }
-
-    private Guide createGuide() {
-
-        return Guide.builder(AppEng.makeId("guide"))
-                .folder("ae2guide")
-                .extension(ImplicitAnnotationStrategy.EXTENSION_POINT, new PartAnnotationStrategy())
-                .extension(TagCompiler.EXTENSION_POINT, new ConfigValueTagExtension())
-                .extension(RecipeExporter.EXTENSION_POINT, new AERecipeExporter())
-                .extension(AdditionalResourceExporter.EXTENSION_POINT, new AEAdditionalExportData())
-                .build();
     }
 
     private void tickPinnedKeys(Minecraft minecraft) {
@@ -411,9 +385,9 @@ public class AppEngClient extends AppEngBase {
 
             if (player != null) {
                 var isDown = event.getAction() == InputConstants.PRESS || event.getAction() == InputConstants.REPEAT;
-                var previousIsDown = player.getData(AEAttachmentTypes.HOLDING_CTRL);
+                var previousIsDown = AEAttachmentTypes.isHoldingCtrl(player);
                 if (previousIsDown != isDown) {
-                    player.setData(AEAttachmentTypes.HOLDING_CTRL, isDown);
+                    AEAttachmentTypes.setHoldingCtrl(player, isDown);
                     ClientPacketDistributor.sendToServer(new UpdateHoldingCtrlPacket(isDown));
                 }
             }
@@ -469,10 +443,6 @@ public class AppEngClient extends AppEngBase {
         }
 
         return this.getCableRenderModeForPlayer(mc.player);
-    }
-
-    public Guide getGuide() {
-        return guide;
     }
 
     @Override

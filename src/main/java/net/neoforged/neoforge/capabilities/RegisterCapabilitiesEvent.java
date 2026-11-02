@@ -26,7 +26,7 @@ import org.jspecify.annotations.Nullable;
  * Fired to register capability providers at an appropriate time.
  */
 public class RegisterCapabilitiesEvent extends Event implements IModBusEvent {
-    RegisterCapabilitiesEvent() {}
+    public RegisterCapabilitiesEvent() {}
 
     // BLOCKS
 

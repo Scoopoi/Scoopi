@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8.3",
   "package": "appeng.mixins",
-  "compatibilityLevel": "JAVA_11",
+  "compatibilityLevel": "JAVA_25",
   "plugin": "appeng.mixins.ConfigPlugin",
   "mixins": [
     "chunkloading.ChunkMapMixin",

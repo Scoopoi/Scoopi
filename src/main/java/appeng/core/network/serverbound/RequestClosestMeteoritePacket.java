@@ -34,6 +34,6 @@ public record RequestClosestMeteoritePacket(ChunkPos pos) implements Serverbound
     public void handleOnServer(ServerPlayer player) {
         var result = ServerCompassService.getClosestMeteorite(player.level(), pos);
         LOG.trace("{} requested closest meteorite for {} in {} -> {}", player, pos, player.level(), result);
-        player.connection.send(new CompassResponsePacket(pos, result));
+        net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(player, new CompassResponsePacket(pos, result));
     }
 }

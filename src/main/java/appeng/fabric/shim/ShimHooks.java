@@ -33,4 +33,17 @@ public final class ShimHooks {
     public static Set<Block> getValidBlocks(BlockEntityType<?> type) {
         return type.validBlocks;
     }
+
+    public static net.minecraft.core.HolderSet<Item> ingredientValues(net.minecraft.world.item.crafting.Ingredient ingredient) {
+        return ingredient.values;
+    }
+
+    public static net.minecraft.core.NonNullList<net.minecraft.world.item.ItemStack> nonNullListOf(
+            java.util.List<net.minecraft.world.item.ItemStack> list) {
+        var result = net.minecraft.core.NonNullList.withSize(list.size(), net.minecraft.world.item.ItemStack.EMPTY);
+        for (int i = 0; i < list.size(); i++) {
+            result.set(i, list.get(i));
+        }
+        return result;
+    }
 }

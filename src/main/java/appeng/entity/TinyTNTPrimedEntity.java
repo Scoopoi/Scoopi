@@ -46,7 +46,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 
 import appeng.core.AEConfig;
 import appeng.core.AppEng;
@@ -54,7 +53,7 @@ import appeng.core.definitions.AEBlocks;
 import appeng.core.definitions.AEEntities;
 import appeng.core.network.clientbound.MockExplosionPacket;
 
-public final class TinyTNTPrimedEntity extends PrimedTnt implements IEntityWithComplexSpawn {
+public final class TinyTNTPrimedEntity extends PrimedTnt {
 
     private LivingEntity placedBy;
 
@@ -131,7 +130,6 @@ public final class TinyTNTPrimedEntity extends PrimedTnt implements IEntityWithC
     }
 
     // override :P
-    @Override
     protected void explode() {
         this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.GENERIC_EXPLODE.value(),
                 SoundSource.BLOCKS, 4.0F,
@@ -182,7 +180,7 @@ public final class TinyTNTPrimedEntity extends PrimedTnt implements IEntityWithC
                                     ? state.getFluidState().getExplosionResistance()
                                     : 0f;
                             final float resistance = Math
-                                    .max(block.getExplosionResistance(state, this.level(), point, ex), fluidResistance);
+                                    .max(block.getExplosionResistance(), fluidResistance);
                             strength -= (resistance + 0.3F) * 0.11f;
 
                             if (strength > 0.01 && !state.isAir()) {
@@ -202,12 +200,10 @@ public final class TinyTNTPrimedEntity extends PrimedTnt implements IEntityWithC
                 new MockExplosionPacket(this.getX(), this.getY(), this.getZ()));
     }
 
-    @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buffer) {
         buffer.writeByte(this.getFuse());
     }
 
-    @Override
     public void readSpawnData(RegistryFriendlyByteBuf additionalData) {
         this.setFuse(additionalData.readByte());
     }

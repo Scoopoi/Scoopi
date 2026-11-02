@@ -37,7 +37,7 @@ public final class FacadeCreativeTab {
     private static CreativeModeTab group;
 
     public static void init(Registry<CreativeModeTab> registry) {
-        group = CreativeModeTab.builder()
+        group = net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab.builder()
                 .title(GuiText.CreativeTabFacades.text())
                 .withTabsBefore(AECreativeTabIds.MAIN)
                 .icon(() -> {

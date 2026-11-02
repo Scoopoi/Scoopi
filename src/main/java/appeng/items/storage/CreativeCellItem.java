@@ -70,7 +70,7 @@ public class CreativeCellItem extends AEBaseItem implements ICellWorkbenchItem {
         if (inventory != null) {
             var cc = getConfigInventory(stack);
             if (!cc.isEmpty()) {
-                if (tooltipFlags.hasShiftDown()) {
+                if (appeng.fabric.shim.ShimClientHooks.hasShiftDown()) {
                     for (var key : cc.keySet()) {
                         lines.accept(Tooltips.of(key.getDisplayName()));
                     }

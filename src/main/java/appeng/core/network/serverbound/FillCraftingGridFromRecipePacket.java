@@ -75,7 +75,7 @@ public record FillCraftingGridFromRecipePacket(
             NonNullList<ItemStack> ingredientTemplates,
             boolean craftMissing) {
         this.recipeId = recipeId;
-        this.ingredientTemplates = NonNullList.copyOf(ingredientTemplates.stream().map(ItemStack::copy).toList());
+        this.ingredientTemplates = appeng.fabric.shim.ShimHooks.nonNullListOf(ingredientTemplates.stream().map(ItemStack::copy).toList());
         this.craftMissing = craftMissing;
     }
 
@@ -330,8 +330,8 @@ public record FillCraftingGridFromRecipePacket(
      */
     private List<AEItemKey> findBestMatchingItemStack(Ingredient ingredient, IPartitionList filter,
             KeyCounter storage) {
-        if (!ingredient.isCustom()) {
-            return ingredient.getValues().stream()
+        if (ingredient.getCustomIngredient() == null) {
+            return appeng.fabric.shim.ShimHooks.ingredientValues(ingredient).stream()
                     .map(Holder::value)
                     .map(AEItemKey::of)
                     .filter(r -> r != null && (filter == null || filter.isListed(r)))

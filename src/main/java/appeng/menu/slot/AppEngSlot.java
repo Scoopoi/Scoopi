@@ -107,7 +107,7 @@ public class AppEngSlot extends Slot {
             return ItemStack.EMPTY;
         }
 
-        if (getSlotIndex() >= this.inventory.size()) {
+        if (getContainerSlot() >= this.inventory.size()) {
             return ItemStack.EMPTY;
         }
 

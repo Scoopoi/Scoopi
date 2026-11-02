@@ -43,8 +43,6 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.display.RecipeDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplay;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.neoforge.common.conditions.NotCondition;
-import net.neoforged.neoforge.common.conditions.TagEmptyCondition;
 
 import appeng.core.AppEng;
 import appeng.core.definitions.AEItems;
@@ -99,8 +97,7 @@ public class MatterCannonAmmo extends MechanicsRecipe<RecipeInput> {
     public static void ammo(HolderGetter<Item> items, RecipeOutput consumer, Identifier id, TagKey<Item> tag,
             float weight) {
         var recipe = new MatterCannonAmmo(Ingredient.of(items.getOrThrow(tag)), weight);
-        var condition = new NotCondition(new TagEmptyCondition<>(tag));
-        consumer.accept(ResourceKey.create(Registries.RECIPE, id), recipe, null, condition);
+        consumer.accept(ResourceKey.create(Registries.RECIPE, id), recipe, null);
     }
 
     @Override
