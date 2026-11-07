@@ -1,7 +1,7 @@
 {
   "name": "Fiske-app",
   "short_name": "Fiske-app",
-  "description": "Fangstlog, fisketure og prognose for karpefiskeri.",
+  "description": "Fangstlog, ture, statistik og drone-tælling til karpe- og medefiskeri.",
   "lang": "da",
   "start_url": "./",
   "scope": "./",

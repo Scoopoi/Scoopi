@@ -3,7 +3,7 @@
 Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 
 ## Om ejeren
-- Scoopi, Hvidovre (Danmark). Fisker mest efter karper, også andre arter.
+- Scoopi, Hvidovre (Danmark). **Appen er kun til karpe- og medefiskeri** (karpe og fredfisk; ingen rovfisk eller havfiskeri. Kunstagn til karper, fx kunstig majs og zig-skum, er med, men ikke rovfiskeagn som blink og wobler).
 - Vil have korte svar på enkelt dansk.
 - Bruger appen på en Android-telefon og en PC.
 
@@ -80,4 +80,17 @@ Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 
 ## Åbent
 - GitHub-brugernavn: scoopoi (koden ligger foreløbig i repoet `scoopoi/scoopi`)
-- Hvilken drone (for at vide om der kommer `.SRT`-filer)?
+- Drone: **DJI Mini 3 Pro med polfilter** (appen skal virke med DJI-serien generelt). Fisker mest i **Vallensbæk Sø / Tueholm Sø**, men kan være hvor som helst.
+
+## Ændringer undervejs (aftalt med Scoopi)
+- **Kun karpe- og medefiskeri:** artsliste = karpe og fredfisk (+ aborre, ål); agn = karpe-/medeagn (boilies, partikler, majs, orm, maddiker …) + kunstagn til karper (kunstig majs, pop-up, zig-skum …); vandtyper = Sø/Å/Kanal/Dam. Karper har feltet *karpetype* (skæl/spejl/læder/lineær).
+- Første fane er **Ny tur**, og appen åbner på den. En tur har: dato, stedtype (sø/å/kanal/dam), stedets navn, start/slut, position (GPS) og fangst (eller "ingen fangst").
+- Hver fisk: art, vægt, længde, fanget på (agn), smag, farve og **fanget af** (mig eller en vens navn). Venners fangst tæller med i statistikken, men kan filtreres fra.
+- Fanen **Rekorder** er erstattet af **Statistik** (rekorder ligger dér): søjlediagrammer for agn, smag og farve (antal fisk), vejr (fisk pr. time, med antal ture og timer), og gennemsnitlig størrelse pr. art pr. sted.
+- Vejr gemmes på turen (ved starttidspunktet) og hentes automatisk, når der er net.
+- **Drone (første version):** upload video eller billede, spol og vælg frame, automatisk karpetælling med justering (karpelængde i px, følsomhed, mørke/lyse, ignorér grøde), tryk for at tilføje/fjerne. Gemmes lokalt i IndexedDB (store `drone`).
+- **Målestok og GPS:** `.SRT` (video) og DJI-XMP (billeder) læses i `js/dji.js`. cm/px = 2·højde·tan(HFOV/2)/bredde; Mini 3 Pro HFOV ≈ 69,7° ved 1x. Karpelængde fra pletten form (2. ordens momenter). Mini 3 Pro's SRT har ingen yaw: retning tages fra flyveretningen eller indtastes.
+- **Søkort** (fane i Drone): alle analyser med GPS for en sø lagt på Leaflet-kort (luftfoto), karper farvet efter størrelse, felter (10/25/50 m) med antal, dubletter fra overlappende billeder (<1 m) tælles én gang. Leaflet ligger i `vendor/leaflet/`.
+- **Næste drone-trin:** tune detektionen på rigtige optagelser fra Scoopi; evt. egentlig billed-mosaik (OpenCV.js) oven på GPS-placeringen.
+- **Fangster-fanen:** hurtig indtastning af én fangst (dato, kl., sted, vandtype, GPS, fisk, billeder, note). Fangsten lægges på en eksisterende tur samme sted, hvis klokkeslættet ligger i turen (også over midnat); ellers oprettes en tur uden sluttid. Under formularen: alle fangster med billede, filter på art, ret (åbner turen) og slet.
+- **Fisk** har nu også *kl.* og *billeder*. Billeder komprimeres (maks. 1600 px JPEG) og gemmes i IndexedDB-store `photos`; fiskene har `photoIds`. Fælles fiskefelter ligger i `js/fisk.js`.
