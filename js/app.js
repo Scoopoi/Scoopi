@@ -4,7 +4,7 @@ import * as fangster from './fangster.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 
-const VERSION = '0.7.0';
+const VERSION = '0.7.1';
 
 const routes = {
   fangster: {
@@ -114,5 +114,14 @@ addEventListener('hashchange', render);
 render();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
+  // Når en ny version er klar, genindlæses siden én gang, så den nye kode bruges med det samme.
+  const havdeSw = !!navigator.serviceWorker.controller;
+  let genindlæst = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (havdeSw && !genindlæst) { genindlæst = true; location.reload(); }
+  });
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((r) => {
+    // Tjek for ny version, når appen kommer frem igen (fx fra baggrunden på telefonen)
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update(); });
+  });
 }
