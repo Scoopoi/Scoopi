@@ -3,16 +3,15 @@ import * as ture from './ture.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 
 const routes = {
   fangster: {
     title: 'Fangster',
-    html: soon('Fangstlog', 'Her logger du dine fangster.', [
-      'Art, vægt, længde, tid og GPS-position',
-      'Fotos og noter',
-      'Agn, smag, farve, rig og stang ved karpefiskeri',
-      'Vejret hentes automatisk',
+    html: soon('Fangstlog', 'Overblik over alle dine karper og fredfisk.', [
+      'Alle fisk fra dine ture samlet ét sted',
+      'Fotos af fangsten',
+      'Rig/forfang og hvilken stang',
     ]),
   },
   ture: {

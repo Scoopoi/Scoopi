@@ -3,7 +3,7 @@
 Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 
 ## Om ejeren
-- Scoopi, Hvidovre (Danmark). Fisker mest efter karper, også andre arter.
+- Scoopi, Hvidovre (Danmark). **Appen er kun til karpe- og medefiskeri** (karpe og fredfisk; ingen rovfisk eller havfiskeri. Kunstagn til karper, fx kunstig majs og zig-skum, er med, men ikke rovfiskeagn som blink og wobler).
 - Vil have korte svar på enkelt dansk.
 - Bruger appen på en Android-telefon og en PC.
 
@@ -83,7 +83,8 @@ Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 - Drone: **DJI Mini 3 Pro med polfilter** (appen skal virke med DJI-serien generelt). Fisker mest i **Vallensbæk Sø / Tueholm Sø**, men kan være hvor som helst.
 
 ## Ændringer undervejs (aftalt med Scoopi)
-- Første fane er **Ny tur**, og appen åbner på den. En tur har: dato, stedtype (sø/hav/å), stedets navn, start/slut, position (GPS) og fangst (eller "ingen fangst").
+- **Kun karpe- og medefiskeri:** artsliste = karpe og fredfisk (+ aborre, ål); agn = karpe-/medeagn (boilies, partikler, majs, orm, maddiker …) + kunstagn til karper (kunstig majs, pop-up, zig-skum …); vandtyper = Sø/Å/Kanal/Dam. Karper har feltet *karpetype* (skæl/spejl/læder/lineær).
+- Første fane er **Ny tur**, og appen åbner på den. En tur har: dato, stedtype (sø/å/kanal/dam), stedets navn, start/slut, position (GPS) og fangst (eller "ingen fangst").
 - Hver fisk: art, vægt, længde, fanget på (agn), smag, farve og **fanget af** (mig eller en vens navn). Venners fangst tæller med i statistikken, men kan filtreres fra.
 - Fanen **Rekorder** er erstattet af **Statistik** (rekorder ligger dér): søjlediagrammer for agn, smag og farve (antal fisk), vejr (fisk pr. time, med antal ture og timer), og gennemsnitlig størrelse pr. art pr. sted.
 - Vejr gemmes på turen (ved starttidspunktet) og hentes automatisk, når der er net.

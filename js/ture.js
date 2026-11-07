@@ -1,15 +1,20 @@
 // "Ny tur": skema til at registrere en fisketur og dens fangst.
 import * as db from './db.js';
-import { esc, num, fmt, uid, today, minutes, varighed, datoTekst, STEDTYPER, toast } from './util.js';
+import { esc, num, fmt, uid, today, minutes, varighed, datoTekst, STEDTYPER, STEDNAVN, toast } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
 
-const ARTER = ['Karpe', 'Gedde', 'Aborre', 'Sandart', 'Brasen', 'Skalle', 'Rudskalle', 'Suder', 'Ål',
-  'Regnbueørred', 'Bækørred', 'Havørred', 'Laks', 'Torsk', 'Hornfisk', 'Makrel', 'Sild', 'Fladfisk', 'Multe'];
-const AGN = ['Boilie', 'Pop-up', 'Wafter', 'Majs', 'Tigernødder', 'Pellets', 'Brød', 'Orm', 'Maddiker',
-  'Rejer', 'Blink', 'Spinner', 'Wobbler', 'Gummifisk', 'Jig', 'Flue', 'Sildeforfang', 'Dødt agn'];
+// Appen er til karpe- og medefiskeri.
+const ARTER = ['Karpe', 'Græskarpe', 'Brasen', 'Suder', 'Karusse', 'Skalle', 'Rudskalle', 'Flire', 'Rimte',
+  'Aborre', 'Ål', 'Løje', 'Grundling', 'Hork'];
+const KARPETYPER = ['Skælkarpe', 'Spejlkarpe', 'Læderkarpe', 'Lineær'];
+const AGN = ['Boilie', 'Pop-up', 'Wafter', 'Snowman', 'Majs', 'Tigernødder', 'Hampefrø', 'Partikler', 'Pellets',
+  'Brød', 'Dej', 'Orm', 'Maddiker', 'Casters', 'Pasta',
+  // Kunstagn til karper
+  'Kunstig majs', 'Kunstig pop-up', 'Kunstig boilie', 'Kunstige tigernødder', 'Kunstig maddike', 'Kunstigt brød', 'Zig-skum'];
 const SMAG = ['Scopex', 'Ananas', 'Jordbær', 'Tutti frutti', 'Banan', 'Kokos', 'Scopex/Ananas', 'Fisk', 'Krill',
   'Squid', 'Blæksprutte', 'Hvidløg', 'Honning', 'Vanilje', 'Chili', 'Mulberry', 'Neutral'];
 const FARVER = ['Hvid', 'Gul', 'Pink', 'Orange', 'Rød', 'Grøn', 'Brun', 'Sort', 'Lilla', 'Blå', 'Sølv', 'Naturlig'];
+const erKarpe = (a) => /^karpe$/i.test(String(a || '').trim());
 const opts = (arr) => arr.map((a) => `<option value="${esc(a)}">`).join('');
 const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
@@ -48,7 +53,7 @@ export async function mount(view) {
       </fieldset>
 
       <label>Navn på stedet
-        <input type="text" name="place" required list="steder" placeholder="Fx Damhussøen" value="${esc(t?.place)}" autocomplete="off">
+        <input type="text" name="place" required list="steder" placeholder="Fx Vallensbæk Sø" value="${esc(t?.place)}" autocomplete="off">
       </label>
       <datalist id="steder">${opts(steder)}</datalist>
       <div class="gps">
@@ -116,7 +121,10 @@ export async function mount(view) {
         <label><input type="radio" name="who-${n}" value="ven" ${c.caughtBy ? 'checked' : ''}><span>En vens fisk</span></label>
       </div>
       <label class="friend" ${c.caughtBy ? '' : 'hidden'}>Vennens navn <input type="text" name="friend" list="venner" placeholder="Fx Peter" value="${esc(c.caughtBy)}" autocomplete="off"></label>
-      <label>Art <input type="text" name="species" list="arter" placeholder="Fx Karpe" value="${esc(c.species)}" autocomplete="off"></label>
+      <label>Art <input type="text" name="species" list="arter" placeholder="Fx Karpe" value="${esc(c.species ?? 'Karpe')}" autocomplete="off"></label>
+      <label class="karpetype" ${erKarpe(c.species ?? 'Karpe') ? '' : 'hidden'}>Karpetype
+        <select name="carpType"><option value="">Ved ikke</option>${KARPETYPER.map((k) => `<option ${k === c.carpType ? 'selected' : ''}>${k}</option>`).join('')}</select>
+      </label>
       <div class="row">
         <label>Vægt (kg) <input type="text" inputmode="decimal" name="weight" placeholder="0,0" value="${esc(fmt(c.weightKg))}"></label>
         <label>Længde (cm) <input type="text" inputmode="decimal" name="length" placeholder="0" value="${esc(fmt(c.lengthCm, 1))}"></label>
@@ -127,6 +135,7 @@ export async function mount(view) {
         <label>Farve <input type="text" name="colour" list="farver" placeholder="Fx Gul" value="${esc(c.colour)}" autocomplete="off"></label>
       </div>`;
     el.dataset.id = c.id || uid();
+    el.querySelector('[name=species]').addEventListener('input', (e) => { el.querySelector('.karpetype').hidden = !erKarpe(e.target.value); });
     el.querySelectorAll('.who input').forEach((r) => r.addEventListener('change', () => {
       const ven = el.querySelector('.who input:checked').value === 'ven';
       el.querySelector('.friend').hidden = !ven;
@@ -188,6 +197,7 @@ export async function mount(view) {
     const catches = form.gotFish.value === 'ja' ? [...list.children].map((el) => ({
       id: el.dataset.id,
       species: el.querySelector('[name=species]').value.trim(),
+      carpType: erKarpe(el.querySelector('[name=species]').value) ? el.querySelector('[name=carpType]').value : '',
       weightKg: num(el.querySelector('[name=weight]').value),
       lengthCm: num(el.querySelector('[name=length]').value),
       bait: el.querySelector('[name=bait]').value.trim(),
@@ -241,10 +251,10 @@ export async function mount(view) {
 }
 
 function tripItem(t) {
-  const type = Object.fromEntries(STEDTYPER)[t.waterType] || '';
+  const type = STEDNAVN[t.waterType] || '';
   const tid = t.end ? `${t.start}–${t.end} (${varighed(minutes(t.start, t.end))})` : `fra ${t.start}`;
   const fangst = t.catches.length
-    ? `<ul class="catches">${t.catches.map((c) => `<li>🐟 <b>${esc(c.species)}</b>${c.weightKg != null ? ` ${fmt(c.weightKg)} kg` : ''}${c.lengthCm != null ? ` · ${fmt(c.lengthCm, 1)} cm` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}${c.flavour || c.colour ? ` (${esc([c.flavour, c.colour].filter(Boolean).join(', '))})` : ''}${c.caughtBy ? ` · <span class="tag">👤 ${esc(c.caughtBy)}</span>` : ''}</li>`).join('')}</ul>`
+    ? `<ul class="catches">${t.catches.map((c) => `<li>🐟 <b>${esc(c.species)}</b>${c.carpType ? ` <span class="muted">(${esc(c.carpType)})</span>` : ''}${c.weightKg != null ? ` ${fmt(c.weightKg)} kg` : ''}${c.lengthCm != null ? ` · ${fmt(c.lengthCm, 1)} cm` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}${c.flavour || c.colour ? ` (${esc([c.flavour, c.colour].filter(Boolean).join(', '))})` : ''}${c.caughtBy ? ` · <span class="tag">👤 ${esc(c.caughtBy)}</span>` : ''}</li>`).join('')}</ul>`
     : '<p class="muted small">Ingen fangst</p>';
   return `
     <li>

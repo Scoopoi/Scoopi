@@ -99,7 +99,7 @@ export async function mount(view) {
 
       <form id="save-form" class="form">
         <div class="row">
-          <label>Sted <input type="text" name="place" list="d-steder" placeholder="Fx Damhussøen" autocomplete="off"></label>
+          <label>Sted <input type="text" name="place" list="d-steder" placeholder="Fx Vallensbæk Sø" autocomplete="off"></label>
           <label>Dato <input type="date" name="date" value="${today()}"></label>
         </div>
         <datalist id="d-steder">${steder.map((s) => `<option value="${esc(s)}">`).join('')}</datalist>

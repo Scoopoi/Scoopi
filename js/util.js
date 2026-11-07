@@ -16,7 +16,9 @@ export function minutes(start, end) {
 export const varighed = (m) => m == null ? '' : `${Math.floor(m / 60)} t${m % 60 ? ` ${m % 60} min` : ''}`;
 export const datoTekst = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
-export const STEDTYPER = [['so', 'Sø'], ['hav', 'Hav'], ['aa', 'Å']];
+export const STEDTYPER = [['so', 'Sø'], ['aa', 'Å'], ['kanal', 'Kanal'], ['dam', 'Dam']];
+// Til visning af ældre ture, der blev gemt med 'Hav'
+export const STEDNAVN = { ...Object.fromEntries(STEDTYPER), hav: 'Hav' };
 
 export function toast(msg) {
   const el = document.createElement('div');
