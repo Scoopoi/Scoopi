@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/bow",
+  "textures": {
+    "layer0": "stormcaller:item/stormcaller_bow_pulling_2"
+  }
+}
