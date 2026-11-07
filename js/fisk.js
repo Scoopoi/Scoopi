@@ -92,7 +92,8 @@ async function visFotos(el) {
   const box = el.querySelector('.fotos');
   const gamle = await Promise.all(el._fotoIds.map(async (id) => ({ id, url: await fotoUrl(id) })));
   const alle = [...gamle.filter((f) => f.url), ...el._nye];
-  box.innerHTML = alle.map((f) => `<span class="thumb"><img src="${f.url}" alt=""><button type="button" class="x" data-fjern="${f.id}" aria-label="Fjern billede">✕</button></span>`).join('');
+  box.innerHTML = alle.map((f) => `<span class="thumb"><img src="${f.url}" alt="" data-vis="${f.id}"><button type="button" class="x" data-fjern="${f.id}" aria-label="Fjern billede">✕</button></span>`).join('');
+  box.querySelectorAll('[data-vis]').forEach((img, i) => img.onclick = () => visGalleri(alle.map((f) => f.url), i, true));
   box.querySelectorAll('[data-fjern]').forEach((b) => b.onclick = () => {
     const id = b.dataset.fjern;
     el._fotoIds = el._fotoIds.filter((x) => x !== id);
@@ -166,5 +167,62 @@ export function fiskTekst(c, t) {
     + `${c.time ? ` · ${dag}kl. ${esc(c.time)}` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}`
     + `${c.flavour || c.colour ? ` (${esc([c.flavour, c.colour].filter(Boolean).join(', '))})` : ''}`
     + `${c.caughtBy ? ` · <span class="tag">👤 ${esc(c.caughtBy)}</span>` : ''}`
-    + `${c.photoIds?.length ? ` · 📷${c.photoIds.length > 1 ? c.photoIds.length : ''}` : ''}`;
+    + `${c.photoIds?.length ? ` · <button type="button" class="foto-link" data-galleri="${c.photoIds.join(',')}">📷 ${c.photoIds.length}</button>` : ''}`;
 }
+
+// Tilføj billeder til en fisk, der allerede er gemt (fx dage efter).
+export async function tilfoejFotos(tripId, catchId, files) {
+  const nye = [];
+  for (const f of files) {
+    try {
+      const blob = await komprimer(f);
+      const id = uid();
+      await db.put('photos', { id, blob, createdAt: new Date().toISOString() });
+      nye.push(id);
+    } catch { /* ikke et billede */ }
+  }
+  if (!nye.length) return 0;
+  const t = await db.get('trips', tripId);
+  const c = t?.catches.find((x) => x.id === catchId);
+  if (!c) return 0;
+  c.photoIds = [...(c.photoIds || []), ...nye];
+  t.updatedAt = new Date().toISOString();
+  await db.put('trips', t);
+  return nye.length;
+}
+
+// Billedgalleri i fuld skærm: bladr med pile, swipe eller tastatur.
+export async function visGalleri(kilder, start = 0, erUrl = false) {
+  const urls = erUrl ? kilder : (await Promise.all(kilder.map(fotoUrl))).filter(Boolean);
+  if (!urls.length) return;
+  let i = Math.min(start, urls.length - 1);
+  const ov = document.createElement('div');
+  ov.className = 'galleri';
+  ov.setAttribute('role', 'dialog');
+  ov.innerHTML = `
+    <img alt="">
+    <button type="button" class="g-luk" aria-label="Luk">✕</button>
+    ${urls.length > 1 ? '<button type="button" class="g-pil g-forr" aria-label="Forrige">‹</button><button type="button" class="g-pil g-naeste" aria-label="Næste">›</button>' : ''}
+    <div class="g-tal"></div>`;
+  const img = ov.querySelector('img');
+  const vis = () => { img.src = urls[i]; ov.querySelector('.g-tal').textContent = urls.length > 1 ? `${i + 1} / ${urls.length}` : ''; };
+  const gå = (d) => { i = (i + d + urls.length) % urls.length; vis(); };
+  const luk = () => { ov.remove(); removeEventListener('keydown', tast); };
+  const tast = (e) => { if (e.key === 'Escape') luk(); if (e.key === 'ArrowLeft') gå(-1); if (e.key === 'ArrowRight') gå(1); };
+  ov.querySelector('.g-luk').onclick = luk;
+  ov.querySelector('.g-forr')?.addEventListener('click', () => gå(-1));
+  ov.querySelector('.g-naeste')?.addEventListener('click', () => gå(1));
+  ov.addEventListener('click', (e) => { if (e.target === ov) luk(); });
+  let x0 = null;
+  ov.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+  ov.addEventListener('touchend', (e) => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 40) gå(dx < 0 ? 1 : -1); x0 = null; });
+  addEventListener('keydown', tast);
+  document.body.append(ov);
+  vis();
+}
+
+// Alle "📷 3"-knapper i appen åbner galleriet.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-galleri]');
+  if (b) { e.preventDefault(); visGalleri(b.dataset.galleri.split(',')); }
+});

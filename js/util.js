@@ -40,7 +40,7 @@ export function udledDato(t, time) {
 // Ligger dato+tid inden for turen? (med lidt luft før start)
 export function iTur(t, date, time, førMin = 60) {
   const x = ms(date, time), s = ms(t.date, t.start) - førMin * 60000;
-  const e = t.end ? ms(slutDato(t), t.end) : ms(t.date, t.start) + 24 * 3600000;
+  const e = t.end ? ms(slutDato(t), t.end) : t.igang ? Infinity : ms(t.date, t.start) + 24 * 3600000;
   return x >= s && x <= e;
 }
 // Dage turen dækker
@@ -52,11 +52,15 @@ export function turDage(date, endDate) {
 export const ugedag = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'numeric' });
 export function turTid(t) {
   const m = turMinutter(t);
-  if (!t.end) return `${datoTekst(t.date)} · fra ${t.start}`;
+  if (!t.end) return `${datoTekst(t.date)} · fra ${t.start}${t.igang ? ' · 🟢 i gang' : ''}`;
   const sd = slutDato(t);
   if (sd === t.date) return `${datoTekst(t.date)} · ${t.start}–${t.end}${m != null ? ` (${varighed(m)})` : ''}`;
   return `${ugedag(t.date)} kl. ${t.start} → ${ugedag(sd)} kl. ${t.end}${m != null ? ` (${varighed(m)})` : ''}`;
 }
+
+export const nu = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+// Minutter fra turens start til nu (til igangværende ture)
+export const minutterSiden = (t) => Math.max(0, Math.round((ms(today(), nu()) - ms(t.date, t.start)) / 60000));
 
 export const varighed = (m) => m == null ? '' : `${Math.floor(m / 60)} t${m % 60 ? ` ${m % 60} min` : ''}`;
 export const datoTekst = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
