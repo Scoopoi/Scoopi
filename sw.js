@@ -1,11 +1,16 @@
 // Service worker: gemmer app-filerne, så appen virker offline.
 // Hæv versionsnummeret, når filerne ændres, så telefonen henter de nye.
-const CACHE = 'fiske-app-v2';
+const CACHE = 'fiske-app-v4';
 const FILES = [
   './',
   './index.html',
   './css/style.css',
   './js/app.js',
+  './js/db.js',
+  './js/ture.js',
+  './js/statistik.js',
+  './js/util.js',
+  './js/vejr.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',

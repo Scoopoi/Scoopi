@@ -1,6 +1,8 @@
-// Fiske-app – skal (trin 1). Simpel hash-router + PWA-registrering.
+// Fiske-app. Simpel hash-router + PWA-registrering.
+import * as ture from './ture.js';
+import * as statistik from './statistik.js';
 
-const VERSION = '0.1.1';
+const VERSION = '0.3.0';
 
 const routes = {
   fangster: {
@@ -14,18 +16,11 @@ const routes = {
   },
   ture: {
     title: 'Ny tur',
-    html: soon('Ny tur', 'Start og stop en tur og hold styr på stængerne.', [
-      'Stænger og agn pr. stang',
-      'Stang-timer pr. fisk',
-      'Bedste smag og farve pr. stang-time',
-    ]),
+    mount: ture.mount,
   },
-  rekorder: {
-    title: 'Rekorder',
-    html: soon('Rekorder og album', 'Dine største fisk og billeder.', [
-      'Tungeste og længste pr. art',
-      'Fotoalbum med filter på art, sø og år',
-    ]),
+  statistik: {
+    title: 'Statistik',
+    mount: statistik.mount,
   },
   prognose: {
     title: 'Prognose',
@@ -83,7 +78,7 @@ function render() {
   const route = routes[key] || routes.ture;
   title.textContent = route.title;
   document.title = `${route.title} – Fiske-app`;
-  view.innerHTML = route.html;
+  if (route.mount) { view.innerHTML = ''; route.mount(view); } else view.innerHTML = route.html;
   document.querySelectorAll('.tabs a').forEach((a) => {
     if (a.dataset.route === key) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
