@@ -76,6 +76,7 @@ export function maaneNavn(p) {
 
 // Henter vejr til ture, der mangler det (fx gemt offline). Returnerer antal opdaterede.
 let kører = false;
+const forsøgt = new Map(); // tur-id -> tidspunkt for sidste mislykkede forsøg
 export async function hentManglende() {
   if (kører || !navigator.onLine) return 0;
   kører = true;
@@ -84,10 +85,12 @@ export async function hentManglende() {
     const trips = await db.getAll('trips');
     for (const t of trips) {
       if (t.weather || t.lat == null || !t.start) continue;
+      if (Date.now() - (forsøgt.get(t.id) || 0) < 10 * 60 * 1000) continue; // vent 10 min efter fejl
       try {
         const w = await hentVejr(t);
         if (w) { await db.put('trips', { ...(await db.get('trips', t.id)), weather: w }); n++; }
-      } catch { /* prøv igen senere */ }
+        else forsøgt.set(t.id, Date.now());
+      } catch { forsøgt.set(t.id, Date.now()); /* prøv igen senere */ }
     }
   } finally { kører = false; }
   return n;

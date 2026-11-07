@@ -1,6 +1,6 @@
 // Lille IndexedDB-hjælper. Alt gemmes lokalt på enheden.
 const DB_NAME = 'fiske-app';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let dbPromise;
 
 function open() {
@@ -11,6 +11,7 @@ function open() {
         const db = req.result;
         if (!db.objectStoreNames.contains('trips')) db.createObjectStore('trips', { keyPath: 'id' });
         if (!db.objectStoreNames.contains('drone')) db.createObjectStore('drone', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains('photos')) db.createObjectStore('photos', { keyPath: 'id' });
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);

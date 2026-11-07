@@ -2,33 +2,14 @@
 import * as db from './db.js';
 import { esc, num, fmt, uid, today, minutes, varighed, datoTekst, STEDTYPER, STEDNAVN, toast } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
-
-// Appen er til karpe- og medefiskeri.
-const ARTER = ['Karpe', 'Græskarpe', 'Brasen', 'Suder', 'Karusse', 'Skalle', 'Rudskalle', 'Flire', 'Rimte',
-  'Aborre', 'Ål', 'Løje', 'Grundling', 'Hork'];
-const KARPETYPER = ['Skælkarpe', 'Spejlkarpe', 'Læderkarpe', 'Lineær'];
-const AGN = ['Boilie', 'Pop-up', 'Wafter', 'Snowman', 'Majs', 'Tigernødder', 'Hampefrø', 'Partikler', 'Pellets',
-  'Brød', 'Dej', 'Orm', 'Maddiker', 'Casters', 'Pasta',
-  // Kunstagn til karper
-  'Kunstig majs', 'Kunstig pop-up', 'Kunstig boilie', 'Kunstige tigernødder', 'Kunstig maddike', 'Kunstigt brød', 'Zig-skum'];
-const SMAG = ['Scopex', 'Ananas', 'Jordbær', 'Tutti frutti', 'Banan', 'Kokos', 'Scopex/Ananas', 'Fisk', 'Krill',
-  'Squid', 'Blæksprutte', 'Hvidløg', 'Honning', 'Vanilje', 'Chili', 'Mulberry', 'Neutral'];
-const FARVER = ['Hvid', 'Gul', 'Pink', 'Orange', 'Rød', 'Grøn', 'Brun', 'Sort', 'Lilla', 'Blå', 'Sølv', 'Naturlig'];
-const erKarpe = (a) => /^karpe$/i.test(String(a || '').trim());
-const opts = (arr) => arr.map((a) => `<option value="${esc(a)}">`).join('');
-const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst } from './fisk.js';
 
 let editing = null; // id på tur der redigeres
+export function retTur(id) { editing = id; location.hash = '#/ture'; }
 
 export async function mount(view) {
   hentManglende().then((n) => { if (n && view.isConnected) mount(view); });
   const trips = (await db.getAll('trips')).sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start));
-  const steder = uniq([...trips.map((t) => t.place), 'Vallensbæk Sø', 'Tueholm Sø']);
-  const alle = trips.flatMap((t) => t.catches);
-  const agn = uniq([...AGN, ...alle.map((c) => c.bait)]);
-  const smag = uniq([...SMAG, ...alle.map((c) => c.flavour)]);
-  const farver = uniq([...FARVER, ...alle.map((c) => c.colour)]);
-  const venner = uniq(alle.map((c) => c.caughtBy));
   // Husk position pr. sted
   const posPrSted = {};
   trips.forEach((x) => { if (x.lat != null && !posPrSted[x.place]) posPrSted[x.place] = { lat: x.lat, lon: x.lon }; });
@@ -55,7 +36,6 @@ export async function mount(view) {
       <label>Navn på stedet
         <input type="text" name="place" required list="steder" placeholder="Fx Vallensbæk Sø" value="${esc(t?.place)}" autocomplete="off">
       </label>
-      <datalist id="steder">${opts(steder)}</datalist>
       <div class="gps">
         <button type="button" class="ghost sm" id="gps">📍 Brug min position</button>
         <span class="muted small" id="gps-txt"></span>
@@ -83,11 +63,7 @@ export async function mount(view) {
         <div id="fish-list"></div>
         <button type="button" class="ghost" id="add-fish">+ Tilføj fisk</button>
       </div>
-      <datalist id="arter">${opts(ARTER)}</datalist>
-      <datalist id="agn">${opts(agn)}</datalist>
-      <datalist id="smag">${opts(smag)}</datalist>
-      <datalist id="farver">${opts(farver)}</datalist>
-      <datalist id="venner">${opts(venner)}</datalist>
+      ${datalister(trips)}
 
       <label>Note (valgfri)
         <textarea name="note" rows="2" placeholder="Fx vejr, plads, hvad der virkede">${esc(t?.note)}</textarea>
@@ -109,38 +85,8 @@ export async function mount(view) {
   const list = form.querySelector('#fish-list');
   const wrap = form.querySelector('#fish-wrap');
 
-  let fishN = 0;
   const addFish = (c = {}) => {
-    const n = fishN++;
-    const el = document.createElement('div');
-    el.className = 'fish';
-    el.innerHTML = `
-      <div class="fish-head"><b>Fisk</b><button type="button" class="x" aria-label="Fjern fisk">✕</button></div>
-      <div class="seg who">
-        <label><input type="radio" name="who-${n}" value="mig" ${c.caughtBy ? '' : 'checked'}><span>Min fisk</span></label>
-        <label><input type="radio" name="who-${n}" value="ven" ${c.caughtBy ? 'checked' : ''}><span>En vens fisk</span></label>
-      </div>
-      <label class="friend" ${c.caughtBy ? '' : 'hidden'}>Vennens navn <input type="text" name="friend" list="venner" placeholder="Fx Peter" value="${esc(c.caughtBy)}" autocomplete="off"></label>
-      <label>Art <input type="text" name="species" list="arter" placeholder="Fx Karpe" value="${esc(c.species ?? 'Karpe')}" autocomplete="off"></label>
-      <label class="karpetype" ${erKarpe(c.species ?? 'Karpe') ? '' : 'hidden'}>Karpetype
-        <select name="carpType"><option value="">Ved ikke</option>${KARPETYPER.map((k) => `<option ${k === c.carpType ? 'selected' : ''}>${k}</option>`).join('')}</select>
-      </label>
-      <div class="row">
-        <label>Vægt (kg) <input type="text" inputmode="decimal" name="weight" placeholder="0,0" value="${esc(fmt(c.weightKg))}"></label>
-        <label>Længde (cm) <input type="text" inputmode="decimal" name="length" placeholder="0" value="${esc(fmt(c.lengthCm, 1))}"></label>
-      </div>
-      <label>Fanget på <input type="text" name="bait" list="agn" placeholder="Fx Boilie, orm, blink" value="${esc(c.bait)}" autocomplete="off"></label>
-      <div class="row">
-        <label>Smag <input type="text" name="flavour" list="smag" placeholder="Fx Scopex" value="${esc(c.flavour)}" autocomplete="off"></label>
-        <label>Farve <input type="text" name="colour" list="farver" placeholder="Fx Gul" value="${esc(c.colour)}" autocomplete="off"></label>
-      </div>`;
-    el.dataset.id = c.id || uid();
-    el.querySelector('[name=species]').addEventListener('input', (e) => { el.querySelector('.karpetype').hidden = !erKarpe(e.target.value); });
-    el.querySelectorAll('.who input').forEach((r) => r.addEventListener('change', () => {
-      const ven = el.querySelector('.who input:checked').value === 'ven';
-      el.querySelector('.friend').hidden = !ven;
-      if (ven) el.querySelector('[name=friend]').focus();
-    }));
+    const el = fiskElement(c);
     el.querySelector('.x').onclick = () => { el.remove(); numberFish(); };
     list.append(el);
     numberFish();
@@ -194,17 +140,7 @@ export async function mount(view) {
     if (!form.start.value) fejl.push('starttid');
     if (!form.gotFish.value) fejl.push('om du fik fisk');
 
-    const catches = form.gotFish.value === 'ja' ? [...list.children].map((el) => ({
-      id: el.dataset.id,
-      species: el.querySelector('[name=species]').value.trim(),
-      carpType: erKarpe(el.querySelector('[name=species]').value) ? el.querySelector('[name=carpType]').value : '',
-      weightKg: num(el.querySelector('[name=weight]').value),
-      lengthCm: num(el.querySelector('[name=length]').value),
-      bait: el.querySelector('[name=bait]').value.trim(),
-      flavour: el.querySelector('[name=flavour]').value.trim(),
-      colour: el.querySelector('[name=colour]').value.trim(),
-      caughtBy: el.querySelector('.who input:checked').value === 'ven' ? el.querySelector('[name=friend]').value.trim() || 'Ven' : '',
-    })).filter((c) => c.species || c.weightKg || c.lengthCm || c.bait || c.flavour || c.colour) : [];
+    const catches = form.gotFish.value === 'ja' ? [...list.children].map(lasFisk) : [];
     if (form.gotFish.value === 'ja' && !catches.length) fejl.push('mindst én fisk (eller vælg "Nej")');
     if (catches.some((c) => !c.species)) fejl.push('art på hver fisk');
 
@@ -213,6 +149,7 @@ export async function mount(view) {
       err.hidden = false;
       return;
     }
+    if (form.gotFish.value === 'ja') for (const el of list.children) await gemFotos(el);
     const now = new Date().toISOString();
     const samePlaceTime = t && pos && t.lat === pos.lat && t.lon === pos.lon && t.date === form.date.value && t.start === form.start.value;
     const trip = {
@@ -231,6 +168,7 @@ export async function mount(view) {
       updatedAt: now,
     };
     await db.put('trips', trip);
+    await ryddeFotos();
     editing = null;
     await mount(view);
     toast(t ? 'Turen er rettet' : 'Turen er gemt');
@@ -244,6 +182,7 @@ export async function mount(view) {
   view.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
     if (!confirm('Slet denne tur?')) return;
     await db.remove('trips', b.dataset.del);
+    await ryddeFotos();
     if (editing === b.dataset.del) editing = null;
     await mount(view);
     toast('Turen er slettet');
@@ -254,7 +193,7 @@ function tripItem(t) {
   const type = STEDNAVN[t.waterType] || '';
   const tid = t.end ? `${t.start}–${t.end} (${varighed(minutes(t.start, t.end))})` : `fra ${t.start}`;
   const fangst = t.catches.length
-    ? `<ul class="catches">${t.catches.map((c) => `<li>🐟 <b>${esc(c.species)}</b>${c.carpType ? ` <span class="muted">(${esc(c.carpType)})</span>` : ''}${c.weightKg != null ? ` ${fmt(c.weightKg)} kg` : ''}${c.lengthCm != null ? ` · ${fmt(c.lengthCm, 1)} cm` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}${c.flavour || c.colour ? ` (${esc([c.flavour, c.colour].filter(Boolean).join(', '))})` : ''}${c.caughtBy ? ` · <span class="tag">👤 ${esc(c.caughtBy)}</span>` : ''}</li>`).join('')}</ul>`
+    ? `<ul class="catches">${t.catches.map((c) => `<li>🐟 ${fiskTekst(c)}</li>`).join('')}</ul>`
     : '<p class="muted small">Ingen fangst</p>';
   return `
     <li>

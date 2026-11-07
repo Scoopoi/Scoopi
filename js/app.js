@@ -1,18 +1,15 @@
 // Fiske-app. Simpel hash-router + PWA-registrering.
 import * as ture from './ture.js';
+import * as fangster from './fangster.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 
-const VERSION = '0.6.0';
+const VERSION = '0.7.0';
 
 const routes = {
   fangster: {
     title: 'Fangster',
-    html: soon('Fangstlog', 'Overblik over alle dine karper og fredfisk.', [
-      'Alle fisk fra dine ture samlet ét sted',
-      'Fotos af fangsten',
-      'Rig/forfang og hvilken stang',
-    ]),
+    mount: fangster.mount,
   },
   ture: {
     title: 'Ny tur',
