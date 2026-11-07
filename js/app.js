@@ -1,6 +1,6 @@
 // Fiske-app – skal (trin 1). Simpel hash-router + PWA-registrering.
 
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 
 const routes = {
   fangster: {
@@ -13,8 +13,8 @@ const routes = {
     ]),
   },
   ture: {
-    title: 'Fisketure',
-    html: soon('Fisketure', 'Start og stop en tur og hold styr på stængerne.', [
+    title: 'Ny tur',
+    html: soon('Ny tur', 'Start og stop en tur og hold styr på stængerne.', [
       'Stænger og agn pr. stang',
       'Stang-timer pr. fisk',
       'Bedste smag og farve pr. stang-time',
@@ -79,8 +79,8 @@ const view = document.getElementById('view');
 const title = document.getElementById('title');
 
 function render() {
-  const key = location.hash.replace(/^#\//, '') || 'fangster';
-  const route = routes[key] || routes.fangster;
+  const key = location.hash.replace(/^#\//, '') || 'ture';
+  const route = routes[key] || routes.ture;
   title.textContent = route.title;
   document.title = `${route.title} – Fiske-app`;
   view.innerHTML = route.html;
