@@ -2,6 +2,7 @@
 import * as db from './db.js';
 import { esc, fmt, turMinutter, datoTekst } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
+import { kendteSektion } from './kendte.js';
 
 let artFilter = 'alle';
 let hvemFilter = 'alle'; // alle | mig | venner | <navn>
@@ -54,6 +55,7 @@ export async function mount(view) {
     </section>
 
     ${rekorder(fisk)}
+    ${await kendteSektion()}
     ${gennemsnit(fisk)}
 
     <h3 class="sek">Agn</h3>
