@@ -1,6 +1,6 @@
 // "Fangster": skriv hurtigt én fangst ind, og se alle dine fisk samlet.
 import * as db from './db.js';
-import { esc, uid, today, minutes, datoTekst, STEDTYPER, toast } from './util.js';
+import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato } from './util.js';
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl } from './fisk.js';
 import { retTur } from './ture.js';
@@ -8,23 +8,10 @@ import { retTur } from './ture.js';
 let artFilter = 'alle';
 
 const nu = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
-const tilMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-const forrigeDag = (d) => { const x = new Date(d + 'T12:00Z'); x.setUTCDate(x.getUTCDate() - 1); return x.toISOString().slice(0, 10); };
-
-// Finder en tur samme sted, som fangsttidspunktet ligger inden for (også ture over midnat).
+// Finder en tur samme sted, som fangstens dato og klokkeslæt ligger inden for (også over midnat og flere døgn).
 function findTur(trips, place, date, time) {
   const p = place.trim().toLowerCase();
-  const t = tilMin(time);
-  return trips.find((x) => {
-    if (x.place.trim().toLowerCase() !== p) return false;
-    const s = tilMin(x.start), e = x.end ? tilMin(x.end) : null;
-    const overMidnat = e != null && e < s;
-    if (x.date === date) {
-      if (e == null) return t >= s - 60; // tur uden sluttid: fra lidt før start
-      return overMidnat ? t >= s : t >= s && t <= e;
-    }
-    return x.date === forrigeDag(date) && overMidnat && t <= e;
-  });
+  return trips.find((x) => x.place.trim().toLowerCase() === p && x.start && iTur(x, date, time));
 }
 
 export async function mount(view) {
@@ -36,7 +23,7 @@ export async function mount(view) {
   let pos = null;
 
   const fisk = trips.flatMap((t) => t.catches.map((c) => ({ c, t })))
-    .sort((a, b) => ((b.t.date + (b.c.time || b.t.start)).localeCompare(a.t.date + (a.c.time || a.t.start))));
+    .sort((a, b) => (((b.c.date || b.t.date) + (b.c.time || b.t.start)).localeCompare((a.c.date || a.t.date) + (a.c.time || a.t.start))));
   const arter = [...new Set(fisk.map((f) => f.c.species))].sort((a, b) => a.localeCompare(b, 'da'));
   if (artFilter !== 'alle' && !arter.includes(artFilter)) artFilter = 'alle';
   const vist = fisk.filter((f) => artFilter === 'alle' || f.c.species === artFilter);
@@ -76,7 +63,7 @@ export async function mount(view) {
           <div class="cimg" data-foto="${c.photoIds?.[0] || ''}">${c.photoIds?.length ? '' : '🐟'}</div>
           <div class="cbody">
             <div>${fiskTekst(c)}</div>
-            <div class="muted small">${esc(t.place)} · ${datoTekst(t.date)}</div>
+            <div class="muted small">${esc(t.place)} · ${datoTekst(c.date || t.date)}</div>
             <div class="row-btns">
               <button type="button" class="ghost sm" data-ret="${t.id}">Ret</button>
               <button type="button" class="ghost sm danger" data-slet="${t.id}|${c.id}">Slet</button>
@@ -87,7 +74,7 @@ export async function mount(view) {
 
   const form = view.querySelector('#catch-form');
   const fel = fiskElement({}, { fjernbar: false, titel: 'Fisken' });
-  fel.querySelector('.kl').remove(); // tidspunkt står øverst
+  fel.querySelector('.tidrow').remove(); // tidspunkt står øverst
   view.querySelector('#fisk-her').append(fel);
 
   // Position
@@ -109,7 +96,7 @@ export async function mount(view) {
   const turTxt = () => {
     const f = form.place.value.trim() && form.time.value ? findTur(trips, form.place.value, form.date.value, form.time.value) : null;
     form.querySelector('#tur-txt').textContent = f
-      ? `Fangsten lægges på din tur ${datoTekst(f.date)} kl. ${f.start}${f.end ? '–' + f.end : ''}.`
+      ? `Fangsten lægges på din tur ${datoTekst(f.date)} kl. ${f.start}${f.end ? ` til ${slutDato(f) !== f.date ? datoTekst(slutDato(f)) + ' ' : ''}kl. ${f.end}` : ''}.`
       : 'Der oprettes en ny tur til fangsten. Du kan sætte sluttid på under "Ny tur".';
   };
   ['input', 'change'].forEach((ev) => form.addEventListener(ev, () => { form.querySelector('#err').hidden = true; turTxt(); }));
@@ -125,6 +112,7 @@ export async function mount(view) {
     if (!c.species) fejl.push('art');
     if (fejl.length) { const er = form.querySelector('#err'); er.textContent = 'Udfyld: ' + fejl.join(', ') + '.'; er.hidden = false; return; }
     c.time = form.time.value;
+    c.date = form.date.value;
     await gemFotos(fel);
     c.photoIds = [...fel._fotoIds];
     const noteTxt = form.note.value.trim();

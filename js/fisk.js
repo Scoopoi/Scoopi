@@ -1,6 +1,6 @@
 // Fælles felter for én fisk. Bruges af både "Ny tur" og "Fangster".
 import * as db from './db.js';
-import { esc, num, fmt, uid } from './util.js';
+import { esc, num, fmt, uid, ugedag } from './util.js';
 
 // Appen er til karpe- og medefiskeri.
 export const ARTER = ['Karpe', 'Græskarpe', 'Brasen', 'Suder', 'Karusse', 'Skalle', 'Rudskalle', 'Flire', 'Rimte',
@@ -34,7 +34,7 @@ export function datalister(trips) {
 let tæller = 0;
 
 // Laver et element med felterne for én fisk.
-export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk' } = {}) {
+export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = false } = {}) {
   const n = tæller++;
   const el = document.createElement('div');
   el.className = 'fish';
@@ -45,8 +45,9 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk' } = {}) {
       <label><input type="radio" name="who-${n}" value="ven" ${c.caughtBy ? 'checked' : ''}><span>En vens fisk</span></label>
     </div>
     <label class="friend" ${c.caughtBy ? '' : 'hidden'}>Vennens navn <input type="text" name="friend" list="venner" placeholder="Fx Peter" value="${esc(c.caughtBy)}" autocomplete="off"></label>
-    <div class="row">
-      <label class="grow">Art <input type="text" name="species" list="arter" placeholder="Fx Karpe" value="${esc(c.species ?? 'Karpe')}" autocomplete="off"></label>
+    <label>Art <input type="text" name="species" list="arter" placeholder="Fx Karpe" value="${esc(c.species ?? 'Karpe')}" autocomplete="off"></label>
+    <div class="row tidrow">
+      ${medDag ? '<label class="dag" hidden>Dag <select name="cdate"></select></label>' : ''}
       <label class="kl">Kl. <input type="time" name="time" value="${esc(c.time)}"></label>
     </div>
     <label class="karpetype" ${erKarpe(c.species ?? 'Karpe') ? '' : 'hidden'}>Karpetype
@@ -64,6 +65,7 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk' } = {}) {
     <div class="fotos"></div>
     <label class="foto-btn"><input type="file" accept="image/*" multiple><span>📷 Tilføj billede</span></label>`;
   el.dataset.id = c.id || uid();
+  el._dato = c.date || null;
   el._fotoIds = [...(c.photoIds || [])];
   el._nye = []; // { id, blob, url }
   el.querySelector('[name=species]').addEventListener('input', (e) => { el.querySelector('.karpetype').hidden = !erKarpe(e.target.value); });
@@ -99,6 +101,7 @@ async function visFotos(el) {
   });
 }
 
+const c0date = (el) => el._dato || null;
 // Læser felterne for én fisk.
 export function lasFisk(el) {
   const v = (n) => (el.querySelector(`[name=${n}]`)?.value || '').trim();
@@ -107,6 +110,7 @@ export function lasFisk(el) {
     species: v('species'),
     carpType: erKarpe(v('species')) ? el.querySelector('[name=carpType]').value : '',
     time: v('time') || null,
+    date: v('cdate') || c0date(el),
     weightKg: num(v('weight')),
     lengthCm: num(v('length')),
     bait: v('bait'),
@@ -155,10 +159,11 @@ export async function komprimer(file, max = 1600) {
 }
 
 // Én linje tekst om en fisk (til lister).
-export function fiskTekst(c) {
+export function fiskTekst(c, t) {
+  const dag = c.date && t && c.date !== t.date ? `${ugedag(c.date)} ` : '';
   return `<b>${esc(c.species)}</b>${c.carpType ? ` <span class="muted">(${esc(c.carpType)})</span>` : ''}`
     + `${c.weightKg != null ? ` ${fmt(c.weightKg)} kg` : ''}${c.lengthCm != null ? ` · ${fmt(c.lengthCm, 1)} cm` : ''}`
-    + `${c.time ? ` · kl. ${esc(c.time)}` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}`
+    + `${c.time ? ` · ${dag}kl. ${esc(c.time)}` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}`
     + `${c.flavour || c.colour ? ` (${esc([c.flavour, c.colour].filter(Boolean).join(', '))})` : ''}`
     + `${c.caughtBy ? ` · <span class="tag">👤 ${esc(c.caughtBy)}</span>` : ''}`
     + `${c.photoIds?.length ? ` · 📷${c.photoIds.length > 1 ? c.photoIds.length : ''}` : ''}`;

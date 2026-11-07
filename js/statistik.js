@@ -1,6 +1,6 @@
 // Statistik: simple søjlediagrammer over agn, smag, farve og vejr + rekorder.
 import * as db from './db.js';
-import { esc, fmt, minutes, datoTekst } from './util.js';
+import { esc, fmt, turMinutter, datoTekst } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
 
 let artFilter = 'alle';
@@ -22,7 +22,7 @@ export async function mount(view) {
   const match = (c) => (artFilter === 'alle' || c.species === artFilter) && hvemOk(c);
 
   const fisk = trips.flatMap((t) => t.catches.filter(match).map((c) => ({ ...c, trip: t })));
-  const timer = trips.reduce((s, t) => s + (minutes(t.start, t.end) || 0) / 60, 0);
+  const timer = trips.reduce((s, t) => s + (turMinutter(t) || 0) / 60, 0);
 
   if (!trips.length) {
     view.innerHTML = `<section class="card"><h2>Statistik</h2><p class="muted">Når du har gemt nogle ture under <a href="#/ture">Ny tur</a>, kommer der diagrammer her.</p></section>`;
@@ -102,7 +102,7 @@ function bars(titel, under, rows, farve = false) {
 
 // Vejr: fisk pr. time i hver vejrtype, så lange ture ikke snyder. Antal ture og timer vises også.
 function vejrDiagrammer(trips, match) {
-  const medVejr = trips.filter((t) => t.weather && minutes(t.start, t.end));
+  const medVejr = trips.filter((t) => t.weather && turMinutter(t));
   const manglerPos = trips.filter((t) => t.lat == null).length;
   const manglerSlut = trips.filter((t) => t.weather && !t.end).length;
   const note = [
@@ -118,7 +118,7 @@ function vejrDiagrammer(trips, match) {
       if (k == null) continue;
       const g = m.get(k) || { ture: 0, timer: 0, fisk: 0 };
       g.ture++;
-      g.timer += minutes(t.start, t.end) / 60;
+      g.timer += turMinutter(t) / 60;
       g.fisk += t.catches.filter(match).length;
       m.set(k, g);
     }
@@ -159,7 +159,7 @@ function rekorder(fisk) {
   }
   const rows = [...pr].filter(([, r]) => r.tung || r.lang).sort((a, b) => (b[1].tung?.weightKg || 0) - (a[1].tung?.weightKg || 0));
   if (!rows.length) return '';
-  const hvor = (c) => `<span class="muted small">${c.caughtBy ? `👤 ${esc(c.caughtBy)}, ` : ''}${esc(c.trip.place)}, ${datoTekst(c.trip.date)}</span>`;
+  const hvor = (c) => `<span class="muted small">${c.caughtBy ? `👤 ${esc(c.caughtBy)}, ` : ''}${esc(c.trip.place)}, ${datoTekst(c.date || c.trip.date)}</span>`;
   return `
     <section class="card">
       <h2>🏆 Rekorder</h2>
