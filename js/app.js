@@ -1,8 +1,9 @@
 // Fiske-app. Simpel hash-router + PWA-registrering.
 import * as ture from './ture.js';
 import * as statistik from './statistik.js';
+import * as drone from './drone.js';
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 
 const routes = {
   fangster: {
@@ -32,11 +33,7 @@ const routes = {
   },
   drone: {
     title: 'Drone',
-    html: soon('Drone-analyse', 'Find grøde, grødefrie spots og karper i dine drone-optagelser.', [
-      'Grøde vs. åbent vand som overlay',
-      'Nummererede grødefrie spots',
-      'Karpetælling (estimat)',
-    ]),
+    mount: drone.mount,
   },
   kort: {
     title: 'Kort',

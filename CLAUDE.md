@@ -87,3 +87,5 @@ Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 - Hver fisk: art, vægt, længde, fanget på (agn), smag, farve og **fanget af** (mig eller en vens navn). Venners fangst tæller med i statistikken, men kan filtreres fra.
 - Fanen **Rekorder** er erstattet af **Statistik** (rekorder ligger dér): søjlediagrammer for agn, smag og farve (antal fisk), vejr (fisk pr. time, med antal ture og timer), og gennemsnitlig størrelse pr. art pr. sted.
 - Vejr gemmes på turen (ved starttidspunktet) og hentes automatisk, når der er net.
+- **Drone (første version):** upload video eller billede, spol og vælg frame, automatisk karpetælling med justering (karpelængde i px, følsomhed, mørke/lyse, ignorér grøde), tryk for at tilføje/fjerne. Gemmes lokalt i IndexedDB (store `drone`).
+- **Ønske fra Scoopi (næste drone-trin):** ét samlet billede af hele søen (mosaik af flere frames), hvor karperne er markeret med **størrelse** og **antal pr. område** af søen. Størrelse kræver målestok (flyvehøjde + kamera, fx fra DJI `.SRT`). Scoopi sender rigtige drone-billeder, så detektionen kan tunes.

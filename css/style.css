@@ -88,7 +88,7 @@ button:disabled { opacity: .5; cursor: default; }
 .row { display: flex; gap: 12px; }
 .row > label { flex: 1; min-width: 0; }
 .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.form .seg label { flex: 1; margin: 0; font-weight: 400; }
+.seg label { flex: 1; margin: 0 !important; font-weight: 400; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg span { display: block; text-align: center; padding: 10px 6px; cursor: pointer; background: var(--bg); }
 .seg label + label span { border-left: 1px solid var(--line); }
@@ -152,3 +152,26 @@ table.gns td { padding: 6px 6px 6px 0; border-bottom: 1px solid var(--line); }
 table.gns th:not(:first-child), table.gns td:not(:first-child) { text-align: right; }
 .fish .seg.who { margin-bottom: 12px; }
 .fish .seg span { background: var(--card); }
+
+/* Drone */
+.file-btn { display: block; margin: 8px 0; }
+.file-btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.file-btn span { display: block; text-align: center; padding: 14px; border: 2px dashed var(--brand); border-radius: 12px; color: var(--brand); font-weight: 600; cursor: pointer; }
+.file-btn input:focus-visible + span { outline: 2px solid var(--accent); }
+#video { width: 100%; border-radius: 10px; background: #000; margin-top: 8px; max-height: 60vh; }
+#seek { width: 100%; margin: 8px 0; }
+.row-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.canvas-wrap { margin: 8px -4px 12px; }
+#cv { width: 100%; height: auto; display: block; border-radius: 10px; cursor: crosshair; touch-action: manipulation; }
+.tune { margin-bottom: 16px; }
+.tune summary { font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+.tune label { display: block; font-size: .9rem; margin-bottom: 8px; }
+.tune input[type=range] { width: 100%; }
+.small-seg { margin: 8px 0 12px; }
+.small-seg span { font-size: .85rem; padding: 8px 4px; }
+.check { display: flex !important; align-items: center; gap: 8px; }
+ul.drone-list { list-style: none; padding: 0; margin: 0; }
+ul.drone-list li { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+ul.drone-list li:first-child { border-top: 0; }
+ul.drone-list img { width: 96px; height: 72px; object-fit: cover; border-radius: 8px; background: var(--line); flex-shrink: 0; }
+@media (prefers-color-scheme: dark) { .file-btn span { color: var(--accent); border-color: var(--accent); } }
