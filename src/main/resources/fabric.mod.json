@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "creepertackle",
+  "version": "${version}",
+  "name": "Creeper Tackle",
+  "description": "Sprint into a creeper and right-click to tackle it! Tackled creepers get knocked flat, see stars, and are permanently defused.",
+  "authors": ["Scoopi"],
+  "icon": "assets/creepertackle/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.scoopi.creepertackle.CreeperTackle"],
+    "client": ["com.scoopi.creepertackle.client.CreeperTackleClient"]
+  },
+  "mixins": [
+    "creepertackle.mixins.json",
+    {
+      "config": "creepertackle.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.scoopi.creepertackle.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "LivingEntityRendererMixin",
+    "GameRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
