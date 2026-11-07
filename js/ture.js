@@ -212,6 +212,7 @@ export async function mount(view) {
       end: form.end.value || null,
       endDate: form.end.value ? form.endDate.value || form.date.value : null,
       igang: igangNu,
+      ...(t?.cirka ? { cirka: t.cirka } : {}), // gammel fangst med cirka-dato
       catches,
       note: form.note.value.trim(),
       lat: pos?.lat ?? null,

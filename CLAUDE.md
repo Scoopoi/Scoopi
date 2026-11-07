@@ -104,3 +104,4 @@ Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
   - Venner tilføjes med invitationskode/link. Kun egne ture kan rettes; andres kan ses.
   - Lokal-først: IndexedDB er stadig hovedlager (virker offline); delte ture synkroniseres op/ned, når der er net.
   - Venter på at Scoopi opretter et Supabase-projekt (EU-region) og sender Project URL + anon public key (må gerne stå i koden; sikkerheden ligger i Row Level Security). **Aldrig** service_role-nøglen.
+- **Gamle fangster:** Fangster → "📅 Gammel fangst" med ca. måned (eller "ved ikke") og år. Gemmes som tur med `cirka: 'maaned'|'aar'` (dato = 15. i måneden / 1. juli), vises som "ca. juni 2018". Ingen vejr, tæller ikke i timer; tæller i rekorder, kendte fisk og samme-fisk. Billedets EXIF-dato foreslås automatisk ("Brug den dato").

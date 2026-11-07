@@ -1,6 +1,6 @@
 // "Fangster": skriv hurtigt én fangst ind, og se alle dine fisk samlet.
 import * as db from './db.js';
-import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag } from './util.js';
+import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER } from './util.js';
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
 import { retTur } from './ture.js';
@@ -37,10 +37,20 @@ export async function mount(view) {
     <form class="card form" id="catch-form" novalidate>
       <h2>Ny fangst</h2>
       ${igang ? `<p class="igang-note">🟢 Igangværende tur: <b>${esc(igang.place)}</b> fra ${ugedag(igang.date)} kl. ${igang.start}</p>` : ''}
-      <div class="row">
+      <label class="check"><input type="checkbox" id="gammel"> 📅 Gammel fangst – jeg kender kun ca. tidspunktet</label>
+      <div class="row" id="praecis">
         <label>Dato <input type="date" name="date" value="${today()}"></label>
         <label>Kl. <input type="time" name="time" value="${nu()}"></label>
       </div>
+      <div class="row" id="cirka" hidden>
+        <label>Måned (ca.)
+          <select name="cMaaned"><option value="">Ved ikke</option>${MÅNEDER.map((m, i) => `<option value="${String(i + 1).padStart(2, '0')}">${m[0].toUpperCase() + m.slice(1)}</option>`).join('')}</select>
+        </label>
+        <label>År (ca.)
+          <select name="cAar">${Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => new Date().getFullYear() - i).map((y) => `<option>${y}</option>`).join('')}</select>
+        </label>
+      </div>
+      <p class="exif-note" id="exif" hidden></p>
       <label>Sted
         <input type="text" name="place" list="steder" placeholder="Fx Vallensbæk Sø" value="${esc(sidst?.place || '')}" autocomplete="off">
       </label>
@@ -70,7 +80,7 @@ export async function mount(view) {
           <div class="cbody">
             <div>${fiskTekst(c)}</div>
             ${c.fishId && kendte[c.fishId] ? `<div class="small kendt">🏷️ <b>${esc(kendte[c.fishId])}</b> · fanget ${antalPrFisk[c.fishId]} gange</div>` : ''}
-            <div class="muted small">${esc(t.place)} · ${datoTekst(c.date || t.date)}</div>
+            <div class="muted small">${esc(t.place)} · ${fangstDato(c, t)}</div>
             <div class="row-btns">
               <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>📷 Tilføj billeder</span></label>
               <button type="button" class="ghost sm" data-samme="${c.id}">🔍 Samme fisk?</button>
@@ -101,8 +111,32 @@ export async function mount(view) {
       { enableHighAccuracy: true, timeout: 15000 });
   };
 
+  // Gammel fangst med cirka-dato
+  const gammel = form.querySelector('#gammel');
+  const erGammel = () => gammel.checked;
+  gammel.onchange = () => {
+    form.querySelector('#praecis').hidden = erGammel();
+    form.querySelector('#cirka').hidden = !erGammel();
+    if (erGammel() && !igang) form.place.value = form.place.value || '';
+    turTxt();
+  };
+  // Billedets egen dato (EXIF) foreslås
+  fel.addEventListener('exifdato', (e) => {
+    const { date, time } = e.detail;
+    if (date === form.date.value && !erGammel()) return;
+    const box = form.querySelector('#exif');
+    box.innerHTML = `📷 Billedet er taget <b>${datoTekst(date)} kl. ${time}</b>. <button type="button" class="ghost sm" id="brug-exif">Brug den dato</button>`;
+    box.hidden = false;
+    box.querySelector('#brug-exif').onclick = () => {
+      gammel.checked = false; gammel.onchange();
+      form.date.value = date; form.time.value = time;
+      box.hidden = true; turTxt();
+    };
+  });
+
   // Vis om fangsten kommer på en eksisterende tur
   const turTxt = () => {
+    if (erGammel()) { form.querySelector('#tur-txt').textContent = 'Gemmes som gammel fangst med cirka-dato (uden vejr og timer).'; return; }
     const f = form.place.value.trim() && form.time.value ? findTur(trips, form.place.value, form.date.value, form.time.value) : null;
     form.querySelector('#tur-txt').textContent = f
       ? `Fangsten lægges på din tur ${datoTekst(f.date)} kl. ${f.start}${f.end ? ` til ${slutDato(f) !== f.date ? datoTekst(slutDato(f)) + ' ' : ''}kl. ${f.end}` : ''}.`
@@ -114,19 +148,21 @@ export async function mount(view) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fejl = [];
-    if (!form.date.value) fejl.push('dato');
-    if (!form.time.value) fejl.push('klokkeslæt');
+    if (!erGammel() && !form.date.value) fejl.push('dato');
+    if (!erGammel() && !form.time.value) fejl.push('klokkeslæt');
     if (!form.place.value.trim()) fejl.push('sted');
     const c = lasFisk(fel);
     if (!c.species) fejl.push('art');
     if (fejl.length) { const er = form.querySelector('#err'); er.textContent = 'Udfyld: ' + fejl.join(', ') + '.'; er.hidden = false; return; }
-    c.time = form.time.value;
-    c.date = form.date.value;
+    const mdr = form.cMaaned.value;
+    const cirkaDato = `${form.cAar.value}-${mdr || '07'}-${mdr ? '15' : '01'}`;
+    c.time = erGammel() ? null : form.time.value;
+    c.date = erGammel() ? cirkaDato : form.date.value;
     await gemFotos(fel);
     c.photoIds = [...fel._fotoIds];
     const noteTxt = form.note.value.trim();
     const now = new Date().toISOString();
-    const tur = findTur(await db.getAll('trips'), form.place.value, form.date.value, form.time.value);
+    const tur = erGammel() ? null : findTur(await db.getAll('trips'), form.place.value, form.date.value, form.time.value);
     if (tur) {
       tur.catches.push(c);
       if (noteTxt) tur.note = [tur.note, noteTxt].filter(Boolean).join('\n');
@@ -135,8 +171,9 @@ export async function mount(view) {
       await db.put('trips', tur);
     } else {
       await db.put('trips', {
-        id: uid(), date: form.date.value, waterType: form.waterType.value, place: form.place.value.trim(),
-        start: form.time.value, end: null, catches: [c], note: noteTxt,
+        id: uid(), date: c.date, waterType: form.waterType.value, place: form.place.value.trim(),
+        start: erGammel() ? '12:00' : form.time.value, end: null, catches: [c], note: noteTxt,
+        ...(erGammel() ? { cirka: mdr ? 'maaned' : 'aar' } : {}),
         lat: pos?.lat ?? null, lon: pos?.lon ?? null, weather: null, createdAt: now, updatedAt: now,
       });
     }

@@ -1,7 +1,7 @@
 // Kendte fisk: find ud af, om en karpe er fanget før (af dig eller en ven),
 // sammenlign billederne side om side (skælmønsteret), og følg fiskens historik.
 import * as db from './db.js';
-import { esc, fmt, uid, datoTekst, toast } from './util.js';
+import { esc, fmt, uid, datoTekst, toast, fangstDato } from './util.js';
 import { fotoUrl } from './fisk.js';
 
 const dato = (x) => x.c.date || x.t.date;
@@ -137,7 +137,7 @@ function kort(x, navn, stor = false) {
       <div class="fbill" data-ids="${(c.photoIds || []).join(',')}">🐟</div>
       <div>
         <b>${esc(c.carpType || c.species)}</b> ${c.weightKg != null ? `${fmt(c.weightKg)} kg` : ''}${c.lengthCm != null ? ` · ${fmt(c.lengthCm, 1)} cm` : ''}
-        <div class="muted small">${esc(x.t.place)} · ${datoTekst(dato(x))}${c.caughtBy ? ` · 👤 ${esc(c.caughtBy)}` : ''}</div>
+        <div class="muted small">${esc(x.t.place)} · ${fangstDato(x.c, x.t)}${c.caughtBy ? ` · 👤 ${esc(c.caughtBy)}` : ''}</div>
         ${navn ? `<div class="small">🏷️ <b>${esc(navn)}</b></div>` : ''}
       </div>
     </div>`;
@@ -201,7 +201,7 @@ export async function kendteSektion() {
         <li>
           <div class="trip-top"><b>${esc(f.name)}</b><span class="tag">fanget ${g.length} gange</span></div>
           ${v.length > 1 ? sparkline(v.map((x) => x.c.weightKg)) : ''}
-          <ul class="hist">${g.map((x) => `<li>${datoTekst(dato(x))} · ${x.c.weightKg != null ? fmt(x.c.weightKg) + ' kg' : '–'}${x.c.lengthCm != null ? ` · ${fmt(x.c.lengthCm, 1)} cm` : ''} · ${esc(x.t.place)}${x.c.caughtBy ? ` · 👤 ${esc(x.c.caughtBy)}` : ' · 👤 dig'}</li>`).join('')}</ul>
+          <ul class="hist">${g.map((x) => `<li>${fangstDato(x.c, x.t)} · ${x.c.weightKg != null ? fmt(x.c.weightKg) + ' kg' : '–'}${x.c.lengthCm != null ? ` · ${fmt(x.c.lengthCm, 1)} cm` : ''} · ${esc(x.t.place)}${x.c.caughtBy ? ` · 👤 ${esc(x.c.caughtBy)}` : ' · 👤 dig'}</li>`).join('')}</ul>
           ${ids.length ? `<button type="button" class="foto-link" data-galleri="${ids.join(',')}">📷 Alle ${ids.length} billeder</button>` : ''}
         </li>`;
       }).join('')}</ul>
