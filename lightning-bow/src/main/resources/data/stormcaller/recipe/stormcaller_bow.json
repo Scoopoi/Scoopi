@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "L": "minecraft:lightning_rod",
+    "C": "minecraft:copper_ingot",
+    "B": "minecraft:bow",
+    "G": "minecraft:glowstone_dust"
+  },
+  "pattern": [
+    " L ",
+    "CBC",
+    " G "
+  ],
+  "result": {
+    "id": "stormcaller:stormcaller_bow"
+  }
+}

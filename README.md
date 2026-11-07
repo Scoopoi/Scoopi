@@ -1,3 +1,12 @@
+# Scoopi mods
+
+| Mod | Minecraft | Folder |
+|-----|-----------|--------|
+| **Creeper Tackle**: sprint and right-click a creeper to tackle and defuse it | 1.21.1 (Fabric) | repository root |
+| **Stormcaller Bow**: arrows lift the target into the air and smite it with lightning | 26.2 (Fabric) | [`lightning-bow/`](lightning-bow/) |
+
+---
+
 # Creeper Tackle
 
 A Fabric mod for **Minecraft 1.21.1** that lets you tackle creepers before they blow up.

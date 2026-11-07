@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "stormcaller",
+  "version": "${version}",
+  "name": "Stormcaller Bow",
+  "description": "A bow whose arrows lift the target into the air, call down lightning, and obliterate it in a storm of particles.",
+  "authors": ["Scoopi"],
+  "icon": "assets/stormcaller/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.scoopi.stormbow.Stormcaller"]
+  },
+  "mixins": ["stormcaller.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~26.2",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
