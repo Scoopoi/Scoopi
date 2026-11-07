@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fiske-app</title>
+  <meta name="description" content="Fangstlog, fisketure og prognose for karpefiskeri.">
+  <meta name="theme-color" content="#0f5e5a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="title">Fangster</h1>
+    <span id="net" class="net" hidden>Offline</span>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <nav class="tabs" aria-label="Hovedmenu">
+    <a href="#/fangster" data-route="fangster"><span aria-hidden="true">🐟</span>Fangster</a>
+    <a href="#/ture" data-route="ture"><span aria-hidden="true">🎣</span>Ture</a>
+    <a href="#/rekorder" data-route="rekorder"><span aria-hidden="true">🏆</span>Rekorder</a>
+    <a href="#/prognose" data-route="prognose"><span aria-hidden="true">🌤️</span>Prognose</a>
+    <a href="#/drone" data-route="drone"><span aria-hidden="true">🚁</span>Drone</a>
+    <a href="#/kort" data-route="kort"><span aria-hidden="true">🗺️</span>Kort</a>
+    <a href="#/indstillinger" data-route="indstillinger"><span aria-hidden="true">⚙️</span>Opsætning</a>
+  </nav>
+
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>

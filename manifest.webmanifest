@@ -1,0 +1,16 @@
+{
+  "name": "Fiske-app",
+  "short_name": "Fiske-app",
+  "description": "Fangstlog, fisketure og prognose for karpefiskeri.",
+  "lang": "da",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f5e5a",
+  "theme_color": "#0f5e5a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
