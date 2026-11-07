@@ -1,6 +1,6 @@
 // Statistik: simple søjlediagrammer over agn, smag, farve og vejr + rekorder.
 import * as db from './db.js';
-import { esc, fmt, turMinutter, datoTekst } from './util.js';
+import { esc, fmt, turMinutter, datoTekst, fangstDato } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
 import { kendteSektion } from './kendte.js';
 
@@ -161,7 +161,7 @@ function rekorder(fisk) {
   }
   const rows = [...pr].filter(([, r]) => r.tung || r.lang).sort((a, b) => (b[1].tung?.weightKg || 0) - (a[1].tung?.weightKg || 0));
   if (!rows.length) return '';
-  const hvor = (c) => `<span class="muted small">${c.caughtBy ? `👤 ${esc(c.caughtBy)}, ` : ''}${esc(c.trip.place)}, ${datoTekst(c.date || c.trip.date)}</span>`;
+  const hvor = (c) => `<span class="muted small">${c.caughtBy ? `👤 ${esc(c.caughtBy)}, ` : ''}${esc(c.trip.place)}, ${fangstDato(c, c.trip)}</span>`;
   return `
     <section class="card">
       <h2>🏆 Rekorder</h2>

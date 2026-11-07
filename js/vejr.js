@@ -84,7 +84,7 @@ export async function hentManglende() {
   try {
     const trips = await db.getAll('trips');
     for (const t of trips) {
-      if (t.weather || t.lat == null || !t.start) continue;
+      if (t.weather || t.cirka || t.lat == null || !t.start) continue; // ingen vejr til cirka-datoer
       if (Date.now() - (forsøgt.get(t.id) || 0) < 10 * 60 * 1000) continue; // vent 10 min efter fejl
       try {
         const w = await hentVejr(t);

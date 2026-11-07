@@ -51,6 +51,7 @@ export function turDage(date, endDate) {
 }
 export const ugedag = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'numeric' });
 export function turTid(t) {
+  if (t.cirka) return `${cirkaTekst(t.date, t.cirka)} · gammel fangst`;
   const m = turMinutter(t);
   if (!t.end) return `${datoTekst(t.date)} · fra ${t.start}${t.igang ? ' · 🟢 i gang' : ''}`;
   const sd = slutDato(t);
@@ -63,6 +64,11 @@ export const nu = () => { const d = new Date(); return `${String(d.getHours()).p
 export const minutterSiden = (t) => Math.max(0, Math.round((ms(today(), nu()) - ms(t.date, t.start)) / 60000));
 
 export const varighed = (m) => m == null ? '' : `${Math.floor(m / 60)} t${m % 60 ? ` ${m % 60} min` : ''}`;
+export const MÅNEDER = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december'];
+// Gamle fangster med cirka-dato: 'aar' = kun år kendt, 'maaned' = år og måned kendt.
+export const cirkaTekst = (d, cirka) => cirka === 'aar' ? `ca. ${d.slice(0, 4)}` : `ca. ${MÅNEDER[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
+// Dato for en fangst til visning (respekterer cirka-datoer)
+export const fangstDato = (c, t) => (t?.cirka ? cirkaTekst(c.date || t.date, t.cirka) : datoTekst(c.date || t.date));
 export const datoTekst = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
 export const STEDTYPER = [['so', 'Sø'], ['aa', 'Å'], ['kanal', 'Kanal'], ['dam', 'Dam']];

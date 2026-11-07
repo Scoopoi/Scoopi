@@ -77,6 +77,8 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
   el.querySelector('.foto-btn input').onchange = async (e) => {
     for (const f of e.target.files) {
       try {
+        const exif = await exifDato(f);
+        if (exif) el.dispatchEvent(new CustomEvent('exifdato', { detail: exif, bubbles: true }));
         const blob = await komprimer(f);
         el._nye.push({ id: uid(), blob, url: URL.createObjectURL(blob) });
       } catch { /* ikke et billede */ }
@@ -226,3 +228,17 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-galleri]');
   if (b) { e.preventDefault(); visGalleri(b.dataset.galleri.split(',')); }
 });
+
+// Læser optagedatoen fra billedets EXIF (fx "2019:06:14 05:32:10"). Gamle scannede billeder har den ikke.
+export async function exifDato(file) {
+  try {
+    const txt = new TextDecoder('latin1').decode(await file.slice(0, 128 * 1024).arrayBuffer());
+    const alle = [...txt.matchAll(/((?:19|20)\d\d):([01]\d):([0-3]\d) ([0-2]\d):([0-5]\d):[0-5]\d/g)];
+    if (!alle.length) return null;
+    // DateTimeOriginal er typisk den ældste af datoerne i filen
+    const m = alle.map((x) => x.slice(1)).sort((a, b) => a.join('').localeCompare(b.join('')))[0];
+    const date = `${m[0]}-${m[1]}-${m[2]}`;
+    if (date > new Date().toISOString().slice(0, 10)) return null;
+    return { date, time: `${m[3]}:${m[4]}` };
+  } catch { return null; }
+}
