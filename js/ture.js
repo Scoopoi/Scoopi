@@ -1,6 +1,6 @@
 // "Ny tur": skema til at registrere en fisketur og dens fangst.
 import * as db from './db.js';
-import { esc, num, fmt, uid, today, minutes, varighed, datoTekst, STEDTYPER, STEDNAVN, toast } from './util.js';
+import { esc, num, fmt, uid, today, varighed, datoTekst, STEDTYPER, STEDNAVN, toast, addDays, slutDato, turMinutter, udledDato, turDage, ugedag, turTid } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst } from './fisk.js';
 
@@ -21,10 +21,6 @@ export async function mount(view) {
     <form class="card form" id="trip-form" novalidate>
       <h2>${t ? 'Ret tur' : 'Ny tur'}</h2>
 
-      <label>Dato
-        <input type="date" name="date" required value="${esc(t?.date || today())}">
-      </label>
-
       <fieldset>
         <legend>Hvor fiskede du?</legend>
         <div class="seg">
@@ -41,13 +37,15 @@ export async function mount(view) {
         <span class="muted small" id="gps-txt"></span>
       </div>
 
-      <div class="row">
-        <label>Start
-          <input type="time" name="start" required value="${esc(t?.start)}">
-        </label>
-        <label>Slut
-          <input type="time" name="end" value="${esc(t?.end)}">
-        </label>
+      <div class="row tidsrum">
+        <span class="rl">Start</span>
+        <label><span class="sr">Startdato</span><input type="date" name="date" required value="${esc(t?.date || today())}"></label>
+        <label><span class="sr">Startkl.</span><input type="time" name="start" required value="${esc(t?.start)}"></label>
+      </div>
+      <div class="row tidsrum">
+        <span class="rl">Slut</span>
+        <label><span class="sr">Slutdato</span><input type="date" name="endDate" value="${esc(t ? slutDato(t) : today())}"></label>
+        <label><span class="sr">Slutkl.</span><input type="time" name="end" value="${esc(t?.end)}"></label>
       </div>
       <p class="muted small" id="dur"></p>
 
@@ -86,10 +84,14 @@ export async function mount(view) {
   const wrap = form.querySelector('#fish-wrap');
 
   const addFish = (c = {}) => {
-    const el = fiskElement(c);
+    const el = fiskElement(c, { medDag: true });
+    el._dagManuel = !!c.date && c.date !== udledDato(turNu(), c.time);
+    el.querySelector('[name=cdate]').addEventListener('change', () => { el._dagManuel = true; });
+    el.querySelector('[name=time]').addEventListener('input', () => opdaterDage());
     el.querySelector('.x').onclick = () => { el.remove(); numberFish(); };
     list.append(el);
     numberFish();
+    opdaterDage(el, c.date);
   };
   const numberFish = () => list.querySelectorAll('.fish-head b').forEach((b, i) => { b.textContent = `Fisk ${i + 1}`; });
 
@@ -100,8 +102,6 @@ export async function mount(view) {
   };
   form.querySelectorAll('input[name=gotFish]').forEach((r) => r.addEventListener('change', syncFish));
   form.querySelector('#add-fish').onclick = () => addFish();
-  (t?.catches || []).forEach(addFish);
-  syncFish();
 
   const gpsTxt = form.querySelector('#gps-txt');
   const visPos = () => {
@@ -120,13 +120,41 @@ export async function mount(view) {
   };
   visPos();
 
-  const showDur = () => {
-    const m = minutes(form.start.value, form.end.value);
-    form.querySelector('#dur').textContent = m == null ? '' : `Varighed: ${varighed(m)}`;
+  // Tur lige nu (fra felterne)
+  const turNu = () => ({ date: form.date.value, start: form.start.value || '00:00', end: form.end.value || null, endDate: form.endDate.value || null });
+  // Slutdato følger med: stilles slut-uret før start, er det næste dag.
+  let slutManuel = !!t && slutDato(t) !== (t.end && t.end < t.start ? addDays(t.date, 1) : t.date);
+  const autoSlut = () => {
+    if (slutManuel || !form.date.value) return;
+    const s0 = form.start.value, e0 = form.end.value;
+    form.endDate.value = s0 && e0 && e0 < s0 ? addDays(form.date.value, 1) : form.date.value;
   };
-  form.start.addEventListener('input', showDur);
-  form.end.addEventListener('input', showDur);
+  function opdaterDage(kun, valgt) {
+    const dage = form.date.value ? turDage(form.date.value, form.endDate.value || form.date.value) : [];
+    const els = kun ? [kun] : [...list.children];
+    for (const el of els) {
+      const sel = el.querySelector('[name=cdate]');
+      const før = valgt || sel.value;
+      sel.innerHTML = dage.map((d) => `<option value="${d}">${ugedag(d)}</option>`).join('');
+      const tid = el.querySelector('[name=time]').value;
+      sel.value = el._dagManuel && dage.includes(før) ? før : udledDato(turNu(), tid);
+      el.querySelector('.dag').hidden = dage.length < 2;
+    }
+  }
+  const showDur = () => {
+    const m = turMinutter(turNu());
+    const tekst = !form.end.value ? '' : m == null ? '⚠️ Slut er før start.' : `Varighed: ${varighed(m)}${form.endDate.value !== form.date.value ? ` (${ugedag(form.date.value)} → ${ugedag(form.endDate.value)})` : ''}`;
+    form.querySelector('#dur').textContent = tekst;
+  };
+  form.date.addEventListener('change', () => { autoSlut(); showDur(); opdaterDage(); });
+  form.start.addEventListener('input', () => { autoSlut(); showDur(); opdaterDage(); });
+  form.end.addEventListener('input', () => { autoSlut(); showDur(); opdaterDage(); });
+  form.endDate.addEventListener('change', () => { slutManuel = true; showDur(); opdaterDage(); });
+  autoSlut();
   showDur();
+  (t?.catches || []).forEach(addFish);
+  syncFish();
+  opdaterDage();
 
   form.addEventListener('input', () => { form.querySelector('#err').hidden = true; });
   form.querySelector('#cancel')?.addEventListener('click', () => { editing = null; mount(view); });
@@ -138,6 +166,7 @@ export async function mount(view) {
     if (!form.date.value) fejl.push('dato');
     if (!form.place.value.trim()) fejl.push('navn på stedet');
     if (!form.start.value) fejl.push('starttid');
+    if (form.end.value && turMinutter(turNu()) == null) fejl.push('slut efter start');
     if (!form.gotFish.value) fejl.push('om du fik fisk');
 
     const catches = form.gotFish.value === 'ja' ? [...list.children].map(lasFisk) : [];
@@ -159,6 +188,7 @@ export async function mount(view) {
       place: form.place.value.trim(),
       start: form.start.value,
       end: form.end.value || null,
+      endDate: form.end.value ? form.endDate.value || form.date.value : null,
       catches,
       note: form.note.value.trim(),
       lat: pos?.lat ?? null,
@@ -167,6 +197,7 @@ export async function mount(view) {
       createdAt: t?.createdAt || now,
       updatedAt: now,
     };
+    trip.catches.forEach((c) => { if (!c.date) c.date = udledDato(trip, c.time); });
     await db.put('trips', trip);
     await ryddeFotos();
     editing = null;
@@ -191,15 +222,15 @@ export async function mount(view) {
 
 function tripItem(t) {
   const type = STEDNAVN[t.waterType] || '';
-  const tid = t.end ? `${t.start}–${t.end} (${varighed(minutes(t.start, t.end))})` : `fra ${t.start}`;
+
   const fangst = t.catches.length
-    ? `<ul class="catches">${t.catches.map((c) => `<li>🐟 ${fiskTekst(c)}</li>`).join('')}</ul>`
+    ? `<ul class="catches">${t.catches.map((c) => `<li>🐟 ${fiskTekst(c, t)}</li>`).join('')}</ul>`
     : '<p class="muted small">Ingen fangst</p>';
   return `
     <li>
       <div class="trip-top">
         <div><b>${esc(t.place)}</b> <span class="tag">${type}</span><br>
-          <span class="muted small">${datoTekst(t.date)} · ${tid}</span></div>
+          <span class="muted small">${turTid(t)}</span></div>
         <div class="trip-btns">
           <button type="button" class="ghost sm" data-edit="${t.id}">Ret</button>
           <button type="button" class="ghost sm danger" data-del="${t.id}">Slet</button>

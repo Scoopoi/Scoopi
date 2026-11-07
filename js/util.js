@@ -13,6 +13,51 @@ export function minutes(start, end) {
   if (m < 0) m += 24 * 60; // slutter efter midnat
   return m;
 }
+// ---- Dato og tid for ture, også over midnat og flere døgn ----
+export function addDays(date, n) {
+  const d = new Date(date + 'T12:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+const ms = (date, time) => Date.parse(`${date}T${time}:00Z`); // "lokal" tid regnet som UTC: ingen sommertids-hop
+// Slutdato: gemt, ellers dagen efter hvis sluttid er før starttid (ældre ture).
+export const slutDato = (t) => t.endDate || (t.end && t.end < t.start ? addDays(t.date, 1) : t.date);
+export function turMinutter(t) {
+  if (!t.start || !t.end) return null;
+  const m = (ms(slutDato(t), t.end) - ms(t.date, t.start)) / 60000;
+  return m >= 0 ? m : null;
+}
+// Hvilken dag hører et klokkeslæt til på turen? Første dag, hvor tidspunktet ligger inden for turen.
+export function udledDato(t, time) {
+  if (!time) return t.date;
+  const s = ms(t.date, t.start), e = t.end ? ms(slutDato(t), t.end) : s + 864e5;
+  for (let d = t.date, i = 0; i < 15; i++, d = addDays(d, 1)) {
+    const x = ms(d, time);
+    if (x >= s && x <= e) return d;
+  }
+  return t.date;
+}
+// Ligger dato+tid inden for turen? (med lidt luft før start)
+export function iTur(t, date, time, førMin = 60) {
+  const x = ms(date, time), s = ms(t.date, t.start) - førMin * 60000;
+  const e = t.end ? ms(slutDato(t), t.end) : ms(t.date, t.start) + 24 * 3600000;
+  return x >= s && x <= e;
+}
+// Dage turen dækker
+export function turDage(date, endDate) {
+  const ud = [date];
+  while (endDate && ud.length < 15 && ud[ud.length - 1] < endDate) ud.push(addDays(ud[ud.length - 1], 1));
+  return ud;
+}
+export const ugedag = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'numeric' });
+export function turTid(t) {
+  const m = turMinutter(t);
+  if (!t.end) return `${datoTekst(t.date)} · fra ${t.start}`;
+  const sd = slutDato(t);
+  if (sd === t.date) return `${datoTekst(t.date)} · ${t.start}–${t.end}${m != null ? ` (${varighed(m)})` : ''}`;
+  return `${ugedag(t.date)} kl. ${t.start} → ${ugedag(sd)} kl. ${t.end}${m != null ? ` (${varighed(m)})` : ''}`;
+}
+
 export const varighed = (m) => m == null ? '' : `${Math.floor(m / 60)} t${m % 60 ? ` ${m % 60} min` : ''}`;
 export const datoTekst = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 
