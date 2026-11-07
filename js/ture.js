@@ -1,6 +1,6 @@
 // "Ny tur": skema til at registrere en fisketur og dens fangst.
 import * as db from './db.js';
-import { esc, num, fmt, uid, today, varighed, datoTekst, STEDTYPER, STEDNAVN, toast, addDays, slutDato, turMinutter, udledDato, turDage, ugedag, turTid } from './util.js';
+import { esc, num, fmt, uid, today, varighed, datoTekst, STEDTYPER, STEDNAVN, toast, addDays, slutDato, turMinutter, udledDato, turDage, ugedag, turTid, nu, minutterSiden } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst } from './fisk.js';
 
@@ -17,9 +17,22 @@ export async function mount(view) {
   if (!t) editing = null;
   let pos = t && t.lat != null ? { lat: t.lat, lon: t.lon } : null;
 
+  const igang = trips.filter((x) => x.igang && !x.end);
   view.innerHTML = `
+    ${!t ? igang.map((x) => `
+      <section class="card igang">
+        <h2>🟢 Igangværende tur</h2>
+        <p><b>${esc(x.place)}</b> · fra ${ugedag(x.date)} kl. ${x.start} · <span class="muted">${varighed(minutterSiden(x))} indtil nu</span></p>
+        ${x.catches.length ? `<ul class="catches">${x.catches.map((c) => `<li>🐟 ${fiskTekst(c, x)}</li>`).join('')}</ul>` : '<p class="muted small">Ingen fisk endnu.</p>'}
+        <div class="row-btns">
+          <a class="btn" href="#/fangster">+ Ny fangst</a>
+          <button type="button" class="ghost" data-edit="${x.id}">Ret / tilføj</button>
+          <button type="button" class="ghost" data-afslut="${x.id}">⏹ Afslut tur</button>
+        </div>
+      </section>`).join('') : ''}
     <form class="card form" id="trip-form" novalidate>
       <h2>${t ? 'Ret tur' : 'Ny tur'}</h2>
+      ${!t ? '<p class="muted small">Tryk <b>▶ Start tur nu</b>, når du går i gang. Så kan du tilføje fangster undervejs og afslutte turen bagefter. Eller udfyld det hele og tryk <b>Gem tur</b> for en tur, du allerede har været på.</p>' : ''}
 
       <fieldset>
         <legend>Hvor fiskede du?</legend>
@@ -69,7 +82,8 @@ export async function mount(view) {
 
       <p class="error" id="err" hidden></p>
       <div class="actions">
-        <button type="submit">${t ? 'Gem ændringer' : 'Gem tur'}</button>
+        ${!t ? '<button type="button" id="start-nu">▶ Start tur nu</button>' : ''}
+        <button type="submit" ${!t ? 'class="ghost"' : ''}>${t ? 'Gem ændringer' : 'Gem tur'}</button>
         ${t ? '<button type="button" class="ghost" id="cancel">Annuller</button>' : ''}
       </div>
     </form>
@@ -159,15 +173,23 @@ export async function mount(view) {
   form.addEventListener('input', () => { form.querySelector('#err').hidden = true; });
   form.querySelector('#cancel')?.addEventListener('click', () => { editing = null; mount(view); });
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  form.querySelector('#start-nu')?.addEventListener('click', () => {
+    form.date.value = today();
+    form.start.value = nu();
+    form.end.value = '';
+    gem(true);
+  });
+  form.addEventListener('submit', (e) => { e.preventDefault(); gem(false); });
+
+  async function gem(startNu) {
     const err = form.querySelector('#err');
     const fejl = [];
     if (!form.date.value) fejl.push('dato');
     if (!form.place.value.trim()) fejl.push('navn på stedet');
     if (!form.start.value) fejl.push('starttid');
     if (form.end.value && turMinutter(turNu()) == null) fejl.push('slut efter start');
-    if (!form.gotFish.value) fejl.push('om du fik fisk');
+    const igangNu = !form.end.value && (startNu || !!t?.igang);
+    if (!form.gotFish.value && !igangNu) fejl.push('om du fik fisk');
 
     const catches = form.gotFish.value === 'ja' ? [...list.children].map(lasFisk) : [];
     if (form.gotFish.value === 'ja' && !catches.length) fejl.push('mindst én fisk (eller vælg "Nej")');
@@ -189,6 +211,7 @@ export async function mount(view) {
       start: form.start.value,
       end: form.end.value || null,
       endDate: form.end.value ? form.endDate.value || form.date.value : null,
+      igang: igangNu,
       catches,
       note: form.note.value.trim(),
       lat: pos?.lat ?? null,
@@ -202,13 +225,26 @@ export async function mount(view) {
     await ryddeFotos();
     editing = null;
     await mount(view);
-    toast(t ? 'Turen er rettet' : 'Turen er gemt');
+    toast(startNu ? 'God tur! 🎣 Turen er startet' : t ? 'Turen er rettet' : 'Turen er gemt');
+    if (startNu) scrollTo({ top: 0, behavior: 'smooth' });
     // Vejret hentes af hentManglende() i mount().
-  });
+  }
 
   view.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => {
     editing = b.dataset.edit;
     mount(view).then(() => scrollTo({ top: 0, behavior: 'smooth' }));
+  });
+  view.querySelectorAll('[data-afslut]').forEach((b) => b.onclick = async () => {
+    const x = await db.get('trips', b.dataset.afslut);
+    if (!confirm(`Afslut turen ved ${x.place} nu (kl. ${nu()})?`)) return;
+    x.end = nu();
+    x.endDate = today();
+    if (turMinutter(x) == null) { x.endDate = x.date; x.end = x.start; }
+    x.igang = false;
+    x.updatedAt = new Date().toISOString();
+    await db.put('trips', x);
+    await mount(view);
+    toast(`Turen er afsluttet · ${varighed(turMinutter(x))}`);
   });
   view.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
     if (!confirm('Slet denne tur?')) return;

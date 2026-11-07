@@ -1,17 +1,17 @@
 // "Fangster": skriv hurtigt én fangst ind, og se alle dine fisk samlet.
 import * as db from './db.js';
-import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato } from './util.js';
+import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag } from './util.js';
 import { hentManglende } from './vejr.js';
-import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl } from './fisk.js';
+import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
 import { retTur } from './ture.js';
 
 let artFilter = 'alle';
 
-const nu = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 // Finder en tur samme sted, som fangstens dato og klokkeslæt ligger inden for (også over midnat og flere døgn).
 function findTur(trips, place, date, time) {
   const p = place.trim().toLowerCase();
-  return trips.find((x) => x.place.trim().toLowerCase() === p && x.start && iTur(x, date, time));
+  const passer = trips.filter((x) => x.place.trim().toLowerCase() === p && x.start && iTur(x, date, time));
+  return passer.find((x) => x.igang) || passer[0]; // igangværende tur først
 }
 
 export async function mount(view) {
@@ -19,7 +19,8 @@ export async function mount(view) {
   const trips = await db.getAll('trips');
   const posPrSted = {};
   trips.forEach((x) => { if (x.lat != null && !posPrSted[x.place]) posPrSted[x.place] = { lat: x.lat, lon: x.lon }; });
-  const sidst = [...trips].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))[0];
+  const igang = trips.filter((x) => x.igang && !x.end).sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start))[0];
+  const sidst = igang || [...trips].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))[0];
   let pos = null;
 
   const fisk = trips.flatMap((t) => t.catches.map((c) => ({ c, t })))
@@ -31,6 +32,7 @@ export async function mount(view) {
   view.innerHTML = `
     <form class="card form" id="catch-form" novalidate>
       <h2>Ny fangst</h2>
+      ${igang ? `<p class="igang-note">🟢 Igangværende tur: <b>${esc(igang.place)}</b> fra ${ugedag(igang.date)} kl. ${igang.start}</p>` : ''}
       <div class="row">
         <label>Dato <input type="date" name="date" value="${today()}"></label>
         <label>Kl. <input type="time" name="time" value="${nu()}"></label>
@@ -60,11 +62,12 @@ export async function mount(view) {
       </div>
       ${vist.length ? `<ul class="catch-list">${vist.map(({ c, t }) => `
         <li>
-          <div class="cimg" data-foto="${c.photoIds?.[0] || ''}">${c.photoIds?.length ? '' : '🐟'}</div>
+          <div class="cimg" data-foto="${c.photoIds?.[0] || ''}" data-alle="${(c.photoIds || []).join(',')}">${c.photoIds?.length ? '' : '🐟'}</div>
           <div class="cbody">
             <div>${fiskTekst(c)}</div>
             <div class="muted small">${esc(t.place)} · ${datoTekst(c.date || t.date)}</div>
             <div class="row-btns">
+              <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>📷 Tilføj billeder</span></label>
               <button type="button" class="ghost sm" data-ret="${t.id}">Ret</button>
               <button type="button" class="ghost sm danger" data-slet="${t.id}|${c.id}">Slet</button>
             </div>
@@ -140,9 +143,20 @@ export async function mount(view) {
   view.querySelectorAll('[data-foto]').forEach(async (d) => {
     if (!d.dataset.foto) return;
     const u = await fotoUrl(d.dataset.foto);
-    if (u) { d.innerHTML = `<img src="${u}" alt="">`; d.onclick = () => window.open(u, '_blank'); }
+    const ids = d.dataset.alle.split(',').filter(Boolean);
+    if (u) {
+      d.innerHTML = `<img src="${u}" alt="">${ids.length > 1 ? `<span class="antal">${ids.length}</span>` : ''}`;
+      d.onclick = () => visGalleri(ids);
+    }
   });
   view.querySelectorAll('[data-ret]').forEach((b) => b.onclick = () => retTur(b.dataset.ret));
+  view.querySelectorAll('.foto-senere input').forEach((inp) => inp.onchange = async () => {
+    if (!inp.files.length) return;
+    inp.nextElementSibling.textContent = 'Gemmer …';
+    const n = await tilfoejFotos(inp.dataset.tur, inp.dataset.fisk, [...inp.files]);
+    await mount(view);
+    toast(n ? `${n} billede${n > 1 ? 'r' : ''} tilføjet` : 'Ingen billeder tilføjet');
+  });
   view.querySelectorAll('[data-slet]').forEach((b) => b.onclick = async () => {
     if (!confirm('Slet denne fangst?')) return;
     const [tid, cid] = b.dataset.slet.split('|');
