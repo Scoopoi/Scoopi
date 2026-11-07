@@ -4,6 +4,7 @@ import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugeda
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
 import { retTur } from './ture.js';
+import { visSammeFisk, kandidater } from './kendte.js';
 
 let artFilter = 'alle';
 
@@ -17,6 +18,9 @@ function findTur(trips, place, date, time) {
 export async function mount(view) {
   hentManglende().then((n) => { if (n && view.isConnected) mount(view); });
   const trips = await db.getAll('trips');
+  const kendte = Object.fromEntries((await db.getAll('fish')).map((f) => [f.id, f.name]));
+  const antalPrFisk = {};
+  trips.forEach((t) => t.catches.forEach((c) => { if (c.fishId) antalPrFisk[c.fishId] = (antalPrFisk[c.fishId] || 0) + 1; }));
   const posPrSted = {};
   trips.forEach((x) => { if (x.lat != null && !posPrSted[x.place]) posPrSted[x.place] = { lat: x.lat, lon: x.lon }; });
   const igang = trips.filter((x) => x.igang && !x.end).sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start))[0];
@@ -65,9 +69,11 @@ export async function mount(view) {
           <div class="cimg" data-foto="${c.photoIds?.[0] || ''}" data-alle="${(c.photoIds || []).join(',')}">${c.photoIds?.length ? '' : '🐟'}</div>
           <div class="cbody">
             <div>${fiskTekst(c)}</div>
+            ${c.fishId && kendte[c.fishId] ? `<div class="small kendt">🏷️ <b>${esc(kendte[c.fishId])}</b> · fanget ${antalPrFisk[c.fishId]} gange</div>` : ''}
             <div class="muted small">${esc(t.place)} · ${datoTekst(c.date || t.date)}</div>
             <div class="row-btns">
               <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>📷 Tilføj billeder</span></label>
+              <button type="button" class="ghost sm" data-samme="${c.id}">🔍 Samme fisk?</button>
               <button type="button" class="ghost sm" data-ret="${t.id}">Ret</button>
               <button type="button" class="ghost sm danger" data-slet="${t.id}|${c.id}">Slet</button>
             </div>
@@ -136,6 +142,8 @@ export async function mount(view) {
     }
     await mount(view);
     toast('Fangsten er gemt 🎣');
+    const { liste } = await kandidater(c.id);
+    if (liste.length) visSammeFisk(c.id, () => mount(view)); // måske en genfangst?
   });
 
   // Liste
@@ -150,6 +158,7 @@ export async function mount(view) {
     }
   });
   view.querySelectorAll('[data-ret]').forEach((b) => b.onclick = () => retTur(b.dataset.ret));
+  view.querySelectorAll('[data-samme]').forEach((b) => b.onclick = () => visSammeFisk(b.dataset.samme, () => mount(view)));
   view.querySelectorAll('.foto-senere input').forEach((inp) => inp.onchange = async () => {
     if (!inp.files.length) return;
     inp.nextElementSibling.textContent = 'Gemmer …';
