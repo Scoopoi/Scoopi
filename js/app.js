@@ -3,7 +3,7 @@ import * as ture from './ture.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 
 const routes = {
   fangster: {

@@ -80,7 +80,7 @@ Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 
 ## Åbent
 - GitHub-brugernavn: scoopoi (koden ligger foreløbig i repoet `scoopoi/scoopi`)
-- Hvilken drone (for at vide om der kommer `.SRT`-filer)?
+- Drone: **DJI Mini 3 Pro med polfilter** (appen skal virke med DJI-serien generelt). Fisker mest i **Vallensbæk Sø / Tueholm Sø**, men kan være hvor som helst.
 
 ## Ændringer undervejs (aftalt med Scoopi)
 - Første fane er **Ny tur**, og appen åbner på den. En tur har: dato, stedtype (sø/hav/å), stedets navn, start/slut, position (GPS) og fangst (eller "ingen fangst").
@@ -88,4 +88,6 @@ Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 - Fanen **Rekorder** er erstattet af **Statistik** (rekorder ligger dér): søjlediagrammer for agn, smag og farve (antal fisk), vejr (fisk pr. time, med antal ture og timer), og gennemsnitlig størrelse pr. art pr. sted.
 - Vejr gemmes på turen (ved starttidspunktet) og hentes automatisk, når der er net.
 - **Drone (første version):** upload video eller billede, spol og vælg frame, automatisk karpetælling med justering (karpelængde i px, følsomhed, mørke/lyse, ignorér grøde), tryk for at tilføje/fjerne. Gemmes lokalt i IndexedDB (store `drone`).
-- **Ønske fra Scoopi (næste drone-trin):** ét samlet billede af hele søen (mosaik af flere frames), hvor karperne er markeret med **størrelse** og **antal pr. område** af søen. Størrelse kræver målestok (flyvehøjde + kamera, fx fra DJI `.SRT`). Scoopi sender rigtige drone-billeder, så detektionen kan tunes.
+- **Målestok og GPS:** `.SRT` (video) og DJI-XMP (billeder) læses i `js/dji.js`. cm/px = 2·højde·tan(HFOV/2)/bredde; Mini 3 Pro HFOV ≈ 69,7° ved 1x. Karpelængde fra pletten form (2. ordens momenter). Mini 3 Pro's SRT har ingen yaw: retning tages fra flyveretningen eller indtastes.
+- **Søkort** (fane i Drone): alle analyser med GPS for en sø lagt på Leaflet-kort (luftfoto), karper farvet efter størrelse, felter (10/25/50 m) med antal, dubletter fra overlappende billeder (<1 m) tælles én gang. Leaflet ligger i `vendor/leaflet/`.
+- **Næste drone-trin:** tune detektionen på rigtige optagelser fra Scoopi; evt. egentlig billed-mosaik (OpenCV.js) oven på GPS-placeringen.

@@ -18,7 +18,7 @@ let editing = null; // id på tur der redigeres
 export async function mount(view) {
   hentManglende().then((n) => { if (n && view.isConnected) mount(view); });
   const trips = (await db.getAll('trips')).sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start));
-  const steder = [...new Set(trips.map((t) => t.place).filter(Boolean))];
+  const steder = uniq([...trips.map((t) => t.place), 'Vallensbæk Sø', 'Tueholm Sø']);
   const alle = trips.flatMap((t) => t.catches);
   const agn = uniq([...AGN, ...alle.map((c) => c.bait)]);
   const smag = uniq([...SMAG, ...alle.map((c) => c.flavour)]);
