@@ -8,7 +8,7 @@ import * as adgang from './adgang.js';
 import { startTidsfelter } from './util.js';
 startTidsfelter();
 
-const VERSION = '0.18.0';
+const VERSION = '0.19.0';
 
 const routes = {
   fangster: {

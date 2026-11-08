@@ -59,6 +59,7 @@ export async function mount(view) {
     ${gennemsnit(fisk)}
 
     <h3 class="sek">Agn</h3>
+    ${stangTimer(trips, match)}
     ${bars('Fanget på', 'Antal fisk pr. agn', tael(fisk, (c) => c.bait))}
     ${bars('Smag', 'Antal fisk pr. smag', tael(fisk, (c) => c.flavour))}
     ${bars('Farve', 'Antal fisk pr. farve', tael(fisk, (c) => c.colour), true)}
@@ -206,4 +207,41 @@ function gennemsnit(fisk) {
           </tbody>
         </table>`).join('')}
     </section>`;
+}
+
+// Fisk pr. stang-time: hver stang tæller med sine timer – også på ture uden fangst.
+function stangTimer(trips, match) {
+  const ture = trips.filter((t) => t.stænger?.length && !t.cirka && turMinutter(t));
+  if (!ture.length) return `<section class="card"><h2>🎣 Fisk pr. stang-time</h2><p class="muted small">Skriv antal stænger og agn på dine ture, så kan appen regne ud, hvad der fanger bedst pr. time – også når du ikke fanger noget.</p></section>`;
+  let timerIalt = 0, fiskIalt = 0;
+  const dim = { agn: new Map(), smag: new Map(), farve: new Map() };
+  const læg = (m, k, timer, fisk) => { if (!k) return; const key = k[0].toUpperCase() + k.slice(1); const g = m.get(key) || { timer: 0, fisk: 0 }; g.timer += timer; g.fisk += fisk; m.set(key, g); };
+  for (const t of ture) {
+    const h = turMinutter(t) / 60;
+    const fiskPrStang = t.stænger.map(() => 0);
+    for (const c of t.catches.filter(match)) {
+      let i = c.stang ? c.stang - 1 : t.stænger.findIndex((r) => r.agn && c.bait && r.agn.toLowerCase() === c.bait.toLowerCase());
+      if (i >= 0 && i < fiskPrStang.length) fiskPrStang[i]++;
+    }
+    t.stænger.forEach((r, i) => {
+      timerIalt += h; fiskIalt += fiskPrStang[i];
+      læg(dim.agn, r.agn, h, fiskPrStang[i]); læg(dim.smag, r.smag, h, fiskPrStang[i]); læg(dim.farve, r.farve, h, fiskPrStang[i]);
+    });
+  }
+  const rækker = (m) => [...m].map(([label, g]) => ({ label, v: g.fisk / g.timer, txt: fmt(g.fisk / g.timer, 2), sub: `${g.fisk} fisk · ${fmt(g.timer, 0)} stang-timer${g.timer < 10 ? ' · få timer, usikkert' : ''}` }))
+    .sort((a, b) => b.v - a.v);
+  const u = 'Fisk pr. stang-time. Under hver søjle: hvor længe den har ligget ude.';
+  return `
+    <section class="card">
+      <h2>🎣 Fisk pr. stang-time</h2>
+      <div class="kpis">
+        <div><b>${fmt(timerIalt, 0)}</b><span>stang-timer</span></div>
+        <div><b>${fiskIalt}</b><span>fisk på stænger</span></div>
+        <div><b>${fiskIalt ? fmt(timerIalt / fiskIalt, 1) : '–'}</b><span>stang-timer pr. fisk</span></div>
+        <div><b>${ture.length}</b><span>ture med stænger</span></div>
+      </div>
+    </section>
+    ${bars('Agn pr. stang-time', u, rækker(dim.agn))}
+    ${bars('Smag pr. stang-time', u, rækker(dim.smag))}
+    ${bars('Farve pr. stang-time', u, rækker(dim.farve), true)}`;
 }

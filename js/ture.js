@@ -2,7 +2,7 @@
 import * as db from './db.js';
 import { esc, num, fmt, uid, today, varighed, datoTekst, STEDTYPER, STEDNAVN, toast, gyldigTid, addDays, slutDato, turMinutter, udledDato, turDage, ugedag, turTid, nu, minutterSiden } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
-import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst } from './fisk.js';
+import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, agnAutofyld } from './fisk.js';
 
 let editing = null; // id på tur der redigeres
 export function retTur(id) { editing = id; location.hash = '#/ture'; }
@@ -72,6 +72,17 @@ export async function mount(view) {
       </div>
       <p class="muted small" id="dur"></p>
 
+      <fieldset class="staenger">
+        <legend>Stænger og agn</legend>
+        <div class="antal">
+          <button type="button" class="ghost sm" id="faerre" aria-label="Færre stænger">−</button>
+          <b id="antal-txt"></b>
+          <button type="button" class="ghost sm" id="flere" aria-label="Flere stænger">+</button>
+        </div>
+        <div id="stang-liste"></div>
+        <p class="muted small">Agn på hver stang tæller med i statistikken – også når du ikke fanger noget.</p>
+      </fieldset>
+
       <fieldset>
         <legend>Fik du fisk?</legend>
         <div class="seg">
@@ -107,6 +118,46 @@ export async function mount(view) {
   const list = form.querySelector('#fish-list');
   const wrap = form.querySelector('#fish-wrap');
 
+  // ---- Stænger ----
+  // Ny tur: start med stængerne fra din seneste tur (helst samme sted), så du kun retter det, der er anderledes.
+  const forrige = t ? null : (trips.find((x) => x.stænger?.length && x.place === form.place.value.trim()) || trips.find((x) => x.stænger?.length));
+  let stænger = (t ? t.stænger : forrige?.stænger)?.map((r) => ({ ...r, _kopi: !t })) || [{}, {}];
+  const stangListe = form.querySelector('#stang-liste');
+  const læsStænger = () => [...stangListe.children].map((d) => ({
+    agn: d.querySelector('[name=sagn]').value.trim(),
+    smag: d.querySelector('[name=ssmag]').value.trim(),
+    farve: d.querySelector('[name=sfarve]').value.trim(),
+  }));
+  const tegnStænger = () => {
+    stangListe.innerHTML = '';
+    stænger.forEach((r, i) => {
+      const d = document.createElement('div');
+      d.className = 'stang-r';
+      d.innerHTML = `
+        <div class="stang-nr">${i + 1}</div>
+        <div class="stang-felter">
+          <input type="text" name="sagn" list="agn" placeholder="Agn" value="${esc(r.agn)}" autocomplete="off" aria-label="Agn på stang ${i + 1}">
+          <div class="row">
+            <input type="text" name="ssmag" list="smag" placeholder="Smag" value="${esc(r.smag)}" autocomplete="off" aria-label="Smag på stang ${i + 1}">
+            <input type="text" name="sfarve" list="farver" placeholder="Farve" value="${esc(r.farve)}" autocomplete="off" aria-label="Farve på stang ${i + 1}">
+          </div>
+        </div>`;
+      // Kopierede stænger (fra forrige stang/tur): smag og farve følger med, hvis agnet skiftes
+      if (r._kopi) d.querySelectorAll('[name=ssmag], [name=sfarve]').forEach((f) => { if (f.value) { f.dataset.auto = '1'; f.classList.add('auto'); } });
+      agnAutofyld(d.querySelector('[name=sagn]'), d.querySelector('[name=ssmag]'), d.querySelector('[name=sfarve]'));
+      d.addEventListener('change', opdaterFiskStænger);
+      stangListe.append(d);
+    });
+    form.querySelector('#antal-txt').textContent = `${stænger.length} stang${stænger.length === 1 ? '' : 'e'}`.replace('stange', 'stænger');
+    form.querySelector('#faerre').disabled = stænger.length <= 1;
+    opdaterFiskStænger();
+  };
+  function opdaterFiskStænger() { const l = læsStænger(); [...list.children].forEach((el) => el._sætStænger?.(l)); }
+  // Læs felterne, men husk hvilke smag/farve der stadig er automatiske
+  const læsMedAuto = () => [...stangListe.children].map((d, i) => ({ ...læsStænger()[i], _kopi: !!d.querySelector('[name=ssmag].auto, [name=sfarve].auto') }));
+  form.querySelector('#flere').onclick = () => { stænger = læsMedAuto(); stænger.push({ ...(stænger[stænger.length - 1] || {}), _kopi: true }); tegnStænger(); };
+  form.querySelector('#faerre').onclick = () => { stænger = læsMedAuto(); if (stænger.length > 1) stænger.pop(); tegnStænger(); };
+
   const addFish = (c = {}) => {
     const el = fiskElement(c, { medDag: true });
     el._dagManuel = !!c.date && c.date !== udledDato(turNu(), c.time);
@@ -116,6 +167,7 @@ export async function mount(view) {
     list.append(el);
     numberFish();
     opdaterDage(el, c.date);
+    el._sætStænger(læsStænger());
   };
   const numberFish = () => list.querySelectorAll('.fish-head b').forEach((b, i) => { b.textContent = `Fisk ${i + 1}`; });
 
@@ -177,6 +229,7 @@ export async function mount(view) {
   form.endDate.addEventListener('change', () => { slutManuel = true; showDur(); opdaterDage(); });
   autoSlut();
   showDur();
+  tegnStænger();
   (t?.catches || []).forEach(addFish);
   syncFish();
   opdaterDage();
@@ -233,6 +286,7 @@ export async function mount(view) {
       end: form.end.value || null,
       endDate: form.end.value ? form.endDate.value || form.date.value : null,
       igang: igangNu,
+      stænger: læsStænger(),
       ...(t?.cirka ? { cirka: t.cirka } : {}), // gammel fangst med cirka-dato
       catches,
       note: form.note.value.trim(),
@@ -281,6 +335,7 @@ export async function mount(view) {
 function tripItem(t) {
   const type = STEDNAVN[t.waterType] || '';
 
+  const stangTxt = t.stænger?.length ? `<p class="small muted stang-txt">🎣 ${t.stænger.length} stænger: ${t.stænger.map((r, i) => `${i + 1}) ${esc([r.agn, [r.smag, r.farve].filter(Boolean).join(', ')].filter(Boolean).join(' – ') || '?')}`).join(' · ')}</p>` : '';
   const fangst = t.catches.length
     ? `<ul class="catches">${t.catches.map((c) => `<li>🐟 ${fiskTekst(c, t)}</li>`).join('')}</ul>`
     : '<p class="muted small">Ingen fangst</p>';
@@ -295,6 +350,7 @@ function tripItem(t) {
         </div>
       </div>
       ${t.weather ? `<p class="small muted wx">${vejrTekst(t.weather)}</p>` : t.lat != null ? '<p class="small muted wx">Vejr hentes, når der er net …</p>' : ''}
+      ${stangTxt}
       ${fangst}
       ${t.note ? `<p class="small note">${esc(t.note)}</p>` : ''}
     </li>`;

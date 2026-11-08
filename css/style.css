@@ -389,3 +389,15 @@ ul.medl > li:first-child { border-top: 0; }
 
 input[data-tid] { font-variant-numeric: tabular-nums; letter-spacing: .03em; }
 input.ugyldig { outline: 2px solid #b3261e !important; }
+
+/* Stænger */
+fieldset.staenger { background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+fieldset.staenger legend { float: left; width: 100%; margin-bottom: 6px; }
+.antal { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; clear: both; }
+.antal button { width: 40px; font-size: 1.2rem; padding: 4px 0; }
+.stang-r { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-top: 1px solid var(--line); }
+.stang-nr { width: 28px; height: 28px; border-radius: 50%; background: var(--mork); color: var(--guld-lys); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; margin-top: 6px; }
+.stang-felter { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.stang-felter input { display: block; width: 100%; padding: 8px 10px; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
+.stang-felter .row { gap: 6px; }
+.stang-txt { margin: 4px 0 0; }
