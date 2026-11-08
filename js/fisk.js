@@ -1,6 +1,7 @@
 // Fælles felter for én fisk. Bruges af både "Ny tur" og "Fangster".
 import * as db from './db.js';
-import { esc, num, fmt, uid, ugedag } from './util.js';
+import { esc, num, fmt, uid, ugedag, datoTekst } from './util.js';
+import { lasExif } from './exif.js';
 
 // Appen er til karpe- og medefiskeri.
 export const ARTER = ['Karpe', 'Græskarpe', 'Brasen', 'Suder', 'Karusse', 'Skalle', 'Rudskalle', 'Flire', 'Rimte',
@@ -63,6 +64,7 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
       <label>Farve <input type="text" name="colour" list="farver" placeholder="Fx Gul" value="${esc(c.colour)}" autocomplete="off"></label>
     </div>
     <div class="fotos"></div>
+    <div class="exif-fisk" hidden></div>
     <label class="foto-btn"><input type="file" accept="image/*" multiple><span>📷 Tilføj billede</span></label>`;
   el.dataset.id = c.id || uid();
   el._dato = c.date || null;
@@ -77,8 +79,8 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
   el.querySelector('.foto-btn input').onchange = async (e) => {
     for (const f of e.target.files) {
       try {
-        const exif = await exifDato(f);
-        if (exif) el.dispatchEvent(new CustomEvent('exifdato', { detail: exif, bubbles: true }));
+        const exif = await lasExif(f);
+        if (exif) visExif(el, exif);
         const blob = await komprimer(f);
         el._nye.push({ id: uid(), blob, url: URL.createObjectURL(blob) });
       } catch { /* ikke et billede */ }
@@ -229,16 +231,19 @@ document.addEventListener('click', (e) => {
   if (b) { e.preventDefault(); visGalleri(b.dataset.galleri.split(',')); }
 });
 
-// Læser optagedatoen fra billedets EXIF (fx "2019:06:14 05:32:10"). Gamle scannede billeder har den ikke.
-export async function exifDato(file) {
-  try {
-    const txt = new TextDecoder('latin1').decode(await file.slice(0, 128 * 1024).arrayBuffer());
-    const alle = [...txt.matchAll(/((?:19|20)\d\d):([01]\d):([0-3]\d) ([0-2]\d):([0-5]\d):[0-5]\d/g)];
-    if (!alle.length) return null;
-    // DateTimeOriginal er typisk den ældste af datoerne i filen
-    const m = alle.map((x) => x.slice(1)).sort((a, b) => a.join('').localeCompare(b.join('')))[0];
-    const date = `${m[0]}-${m[1]}-${m[2]}`;
-    if (date > new Date().toISOString().slice(0, 10)) return null;
-    return { date, time: `${m[3]}:${m[4]}` };
-  } catch { return null; }
+// Tilbyd at bruge billedets tidspunkt og position.
+function visExif(el, x) {
+  const box = el.querySelector('.exif-fisk');
+  const dele = [];
+  if (x.date) dele.push(`taget <b>${datoTekst(x.date)} kl. ${x.time}</b>`);
+  if (x.lat != null) dele.push('med <b>📍 position</b>');
+  box.innerHTML = `📷 Billedet er ${dele.join(' ')}. <button type="button" class="sm">Brug billedets data</button>`;
+  box.hidden = false;
+  box.querySelector('button').onclick = () => {
+    const tid = el.querySelector('[name=time]');
+    if (x.time && tid) { tid.value = x.time; tid.dispatchEvent(new Event('input', { bubbles: true })); }
+    if (x.date) el._dato = x.date;
+    box.hidden = true;
+    el.dispatchEvent(new CustomEvent('brugexif', { detail: x, bubbles: true }));
+  };
 }
