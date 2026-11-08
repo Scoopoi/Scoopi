@@ -7,10 +7,10 @@ import { lasExif } from './exif.js';
 export const ARTER = ['Karpe', 'Græskarpe', 'Brasen', 'Suder', 'Karusse', 'Skalle', 'Rudskalle', 'Flire', 'Rimte',
   'Aborre', 'Ål', 'Løje', 'Grundling', 'Hork'];
 export const KARPETYPER = ['Skælkarpe', 'Spejlkarpe', 'Læderkarpe', 'Lineær'];
-export const AGN = ['Boilie', 'Pop-up', 'Wafter', 'Snowman', 'Majs', 'Tigernødder', 'Hampefrø', 'Partikler', 'Pellets',
+export const AGN = ['Boilie', 'Pop-up', 'Wafter', 'Snowman', 'Majs', 'Tigernuts', 'Hampefrø', 'Partikler', 'Pellets',
   'Brød', 'Dej', 'Orm', 'Maddiker', 'Casters', 'Pasta',
   // Kunstagn til karper
-  'Kunstig majs', 'Kunstig pop-up', 'Kunstig boilie', 'Kunstige tigernødder', 'Kunstig maddike', 'Kunstigt brød', 'Zig-skum'];
+  'Kunstig majs', 'Kunstig pop-up', 'Kunstig boilie', 'Kunstige tigernuts', 'Kunstig maddike', 'Kunstigt brød', 'Zig-skum'];
 export const SMAG = ['Scopex', 'Ananas', 'Jordbær', 'Tutti frutti', 'Banan', 'Kokos', 'Scopex/Ananas', 'Fisk', 'Krill',
   'Squid', 'Blæksprutte', 'Hvidløg', 'Honning', 'Vanilje', 'Chili', 'Mulberry', 'Neutral'];
 export const FARVER = ['Hvid', 'Gul', 'Pink', 'Orange', 'Rød', 'Grøn', 'Brun', 'Sort', 'Lilla', 'Blå', 'Sølv', 'Naturlig'];
@@ -19,9 +19,9 @@ export const STANDARDSTEDER = ['Vallensbæk Sø', 'Tueholm Sø'];
 // Naturlige agn (og kunstige kopier) har en fast smag og farve, som udfyldes automatisk.
 // Nøglerne er små bogstaver; flere stavemåder peger på samme agn.
 const AGN_STANDARD = {
-  'tigernødder': ['Tigernødder', 'Tigernød', 'Brun'], 'tigernød': ['Tigernødder', 'Tigernød', 'Brun'],
-  'tigernuts': ['Tigernødder', 'Tigernød', 'Brun'], 'tiger nuts': ['Tigernødder', 'Tigernød', 'Brun'], 'tigernut': ['Tigernødder', 'Tigernød', 'Brun'],
-  'kunstige tigernødder': ['Kunstige tigernødder', 'Tigernød', 'Brun'],
+  'tigernuts': ['Tigernuts', 'Tigernuts', 'Brun'], 'tiger nuts': ['Tigernuts', 'Tigernuts', 'Brun'], 'tigernut': ['Tigernuts', 'Tigernuts', 'Brun'],
+  'tigernødder': ['Tigernuts', 'Tigernuts', 'Brun'], 'tigernød': ['Tigernuts', 'Tigernuts', 'Brun'],
+  'kunstige tigernuts': ['Kunstige tigernuts', 'Tigernuts', 'Brun'], 'kunstige tigernødder': ['Kunstige tigernuts', 'Tigernuts', 'Brun'],
   'majs': ['Majs', 'Majs', 'Gul'], 'sweetcorn': ['Majs', 'Majs', 'Gul'], 'kunstig majs': ['Kunstig majs', 'Majs', 'Gul'],
   'hampefrø': ['Hampefrø', 'Hamp', 'Sort'], 'hamp': ['Hampefrø', 'Hamp', 'Sort'],
   'maddiker': ['Maddiker', 'Maddike', 'Hvid'], 'maddike': ['Maddiker', 'Maddike', 'Hvid'], 'kunstig maddike': ['Kunstig maddike', 'Maddike', 'Hvid'],
@@ -38,7 +38,7 @@ export function agnAutofyld(agnFelt, smagFelt, farveFelt) {
       for (const felt of [smagFelt, farveFelt]) if (felt.dataset.auto) { felt.value = ''; delete felt.dataset.auto; felt.classList.remove('auto'); }
       return;
     }
-    if (retNavn && f[0] && f[0] !== agnFelt.value.trim()) agnFelt.value = f[0]; // fx "tigernuts" → "Tigernødder", "majs" → "Majs"
+    if (retNavn && f[0] && f[0] !== agnFelt.value.trim()) agnFelt.value = f[0]; // fx "tigernødder" → "Tigernuts", "majs" → "Majs"
     for (const [felt, v] of [[smagFelt, f[1]], [farveFelt, f[2]]]) {
       if (v && (!felt.value || felt.dataset.auto)) { felt.value = v; felt.dataset.auto = '1'; felt.classList.add('auto'); }
     }
@@ -361,4 +361,17 @@ function visExif(el, x) {
     box.hidden = true;
     el.dispatchEvent(new CustomEvent('brugexif', { detail: x, bubbles: true }));
   };
+}
+
+// Engangs-omdøbning af gemte data: "Tigernødder"/"Tigernød" → "Tigernuts"
+export async function omdøbTigernødder() {
+  try { if (localStorage.getItem('karpeloggen-tigernuts')) return; } catch { return; }
+  const ny = (v) => (typeof v === 'string' ? v.replace(/^tigernødder$|^tigernød$/i, 'Tigernuts').replace(/^kunstige tigernødder$/i, 'Kunstige tigernuts') : v);
+  for (const t of await db.getAll('trips')) {
+    const før = JSON.stringify(t);
+    t.catches.forEach((c) => { c.bait = ny(c.bait); c.flavour = ny(c.flavour); });
+    (t.stænger || []).forEach((r) => { r.agn = ny(r.agn); r.smag = ny(r.smag); });
+    if (JSON.stringify(t) !== før) await db.put('trips', t);
+  }
+  try { localStorage.setItem('karpeloggen-tigernuts', '1'); } catch {}
 }

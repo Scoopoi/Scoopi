@@ -6,13 +6,15 @@ import * as drone from './drone.js';
 import * as kort from './kort.js';
 import * as adgang from './adgang.js';
 import { startTidsfelter } from './util.js';
+import { omdøbTigernødder } from './fisk.js';
 startTidsfelter();
+omdøbTigernødder();
 
-const VERSION = '0.20.0';
+const VERSION = '0.20.1';
 
 const routes = {
   fangster: {
-    title: 'Fangster',
+    title: 'Gamle fangster',
     mount: fangster.mount,
   },
   ture: {
