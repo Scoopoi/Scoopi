@@ -95,28 +95,57 @@ export async function visSammeFisk(catchId, efter) {
     ov.querySelectorAll('[data-sml]').forEach((b) => b.onclick = () => sammenlign(mig.c, liste.find((x) => x.c.id === b.dataset.sml).c));
     ov.querySelectorAll("[data-match]").forEach((b) => b.onclick = async () => {
       const x = liste.find((y) => y.c.id === b.dataset.match);
-      let fishId = x.c.fishId || mig.c.fishId;
-      if (!fishId) {
-        const forslag = `${x.c.carpType || mig.c.carpType || x.c.species} fra ${x.t.place}`;
-        const navn = prompt('Giv fisken et navn (fx "Store Spejl" eller "Arret"):', forslag);
-        if (navn === null) return;
-        fishId = uid();
-        await db.put('fish', { id: fishId, name: navn.trim() || forslag, species: x.c.species, carpType: x.c.carpType || mig.c.carpType || '', createdAt: new Date().toISOString() });
-      } else if (x.c.fishId && mig.c.fishId && x.c.fishId !== mig.c.fishId) {
-        // To kendte fisk er den samme: flet dem
-        const gammel = mig.c.fishId;
-        for (const y of await alleFangster()) if (y.c.fishId === gammel) await kobl(y, fishId);
-        await db.remove('fish', gammel);
-      }
-      await kobl(x, fishId);
-      await kobl(mig, fishId);
-      toast(`Genfangst! 🎉 ${await navnPaa(fishId)}`);
-      tegn();
+      if (await markerSamme(mig, x)) tegn();
     });
   }
   ov.addEventListener('click', (e) => { if (e.target === ov) luk(); });
   tegn();
 }
+
+// Marker to fangster som samme fisk (opretter/fletter en kendt fisk). Returnerer false, hvis man fortryder.
+export async function markerSamme(a, b) {
+  let fishId = b.c.fishId || a.c.fishId;
+  if (!fishId) {
+    const forslag = `${b.c.carpType || a.c.carpType || b.c.species} fra ${b.t.place}`;
+    const navn = prompt('Giv fisken et navn (fx "Store Spejl" eller "Arret"):', forslag);
+    if (navn === null) return false;
+    fishId = uid();
+    await db.put('fish', { id: fishId, name: navn.trim() || forslag, species: b.c.species, carpType: b.c.carpType || a.c.carpType || '', createdAt: new Date().toISOString() });
+  } else if (b.c.fishId && a.c.fishId && b.c.fishId !== a.c.fishId) {
+    // To kendte fisk er den samme: flet dem
+    const gammel = a.c.fishId;
+    for (const y of await alleFangster()) if (y.c.fishId === gammel) await kobl(y, fishId);
+    await db.remove('fish', gammel);
+  }
+  await kobl(b, fishId);
+  await kobl(a, fishId);
+  toast(`Genfangst! 🎉 ${await navnPaa(fishId)}`);
+  return true;
+}
+
+// Scan: alle par af fangster med billeder, der kan være samme fisk (ikke allerede koblet, ikke afvist).
+const AFVIST = 'karpeloggen-ikke-samme';
+const afviste = () => { try { return new Set(JSON.parse(localStorage.getItem(AFVIST) || '[]')); } catch { return new Set(); } };
+const parNøgle = (a, b) => [a.c.id, b.c.id].sort().join('|');
+export function afvisPar(a, b) {
+  const s = afviste(); s.add(parNøgle(a, b));
+  try { localStorage.setItem(AFVIST, JSON.stringify([...s])); } catch {}
+}
+export async function scanGenfangster(fangster, { minScore = 55, alleSoer = false } = {}) {
+  const af = afviste();
+  const med = fangster.filter((x) => x.c.photoIds?.length);
+  const par = [];
+  for (let i = 0; i < med.length; i++) for (let j = i + 1; j < med.length; j++) {
+    const a = med[i], b = med[j];
+    if (a.c.fishId && a.c.fishId === b.c.fishId) continue;
+    if (!alleSoer && a.t.place.trim().toLowerCase() !== b.t.place.trim().toLowerCase()) continue;
+    if (af.has(parNøgle(a, b))) continue;
+    const l = lighed(a, b);
+    if (l && l.score >= minScore) par.push({ a, b, l });
+  }
+  return par.sort((x, y) => y.l.score - x.l.score).slice(0, 50);
+}
+export { sammenlign, kort, fyldBilleder, navnPaa };
 
 async function kobl(x, fishId) {
   const t = await db.get('trips', x.t.id);
