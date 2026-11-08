@@ -3,13 +3,11 @@ import * as db from './db.js';
 import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER, gyldigTid, UKENDT_DATO } from './util.js';
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
-import { retTur } from './ture.js';
+import { retTur, vejrTekst } from './ture.js';
 import { afstand } from './dji.js';
 import { kortVaelger, visFangstKort } from './kortvaelger.js';
 import { visSammeFisk, kandidater } from './kendte.js';
-import * as album from './album.js';
 
-let visning = 'fangst'; // 'fangst' | 'album'
 
 let artFilter = 'alle';
 
@@ -31,18 +29,6 @@ function findTur(trips, place, date, time) {
 }
 
 export async function mount(view) {
-  // Øverst: skift mellem fangster og album
-  const top = `<div class="seg subtabs">
-      <label><input type="radio" name="fvis" value="fangst" ${visning === 'fangst' ? 'checked' : ''}><span>🐟 Gamle fangster</span></label>
-      <label><input type="radio" name="fvis" value="album" ${visning === 'album' ? 'checked' : ''}><span>🖼️ Album</span></label>
-    </div>`;
-  const bindTop = () => view.querySelectorAll('input[name=fvis]').forEach((r) => r.onchange = () => { visning = r.value; mount(view); });
-  if (visning === 'album') {
-    view.innerHTML = top + '<div id="album"></div>';
-    bindTop();
-    await album.mount(view.querySelector('#album'));
-    return;
-  }
   hentManglende().then((n) => { if (n && view.isConnected) mount(view); });
   const trips = await db.getAll('trips');
   const kendte = Object.fromEntries((await db.getAll('fish')).map((f) => [f.id, f.name]));
@@ -60,7 +46,7 @@ export async function mount(view) {
   if (artFilter !== 'alle' && !arter.includes(artFilter)) artFilter = 'alle';
   const vist = fisk.filter((f) => artFilter === 'alle' || f.c.species === artFilter);
 
-  view.innerHTML = top + `
+  view.innerHTML = `
     <form class="card form" id="catch-form" novalidate>
       <h2>Ny fangst</h2>
       ${igang ? `<p class="igang-note">🟢 Igangværende tur: <b>${esc(igang.place)}</b> fra ${ugedag(igang.date)} kl. ${igang.start}</p>` : ''}
@@ -112,6 +98,7 @@ export async function mount(view) {
             <div>${fiskTekst(c)}</div>
             ${c.fishId && kendte[c.fishId] ? `<div class="small kendt">🏷️ <b>${esc(kendte[c.fishId])}</b> · fanget ${antalPrFisk[c.fishId]} gange</div>` : ''}
             <div class="muted small">${esc(t.place)} · ${fangstDato(c, t)}</div>
+            ${c.weather ? `<div class="small muted wx">${vejrTekst(c.weather)}</div>` : t.weather ? `<div class="small muted wx">${vejrTekst(t.weather)} <i>(ved turens start)</i></div>` : !t.cirka && (c.spot || c.plads || t.lat != null) ? '<div class="small muted wx">Vejr hentes, når der er net …</div>' : ''}
             <div class="row-btns">
               <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>🖼️ Tilføj billeder</span></label>
               ${c.plads || c.spot ? `<button type="button" class="ghost sm" data-kort="${t.id}|${c.id}">🗺️ Kort</button>` : ''}
@@ -123,7 +110,6 @@ export async function mount(view) {
         </li>`).join('')}</ul>` : '<p class="muted">Ingen fangster endnu.</p>'}
     </section>`;
 
-  bindTop();
   const form = view.querySelector('#catch-form');
   const fel = fiskElement({}, { fjernbar: false, titel: 'Fisken' });
   fel.querySelector('.tidrow').remove(); // tidspunkt står øverst

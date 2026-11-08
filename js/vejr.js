@@ -92,6 +92,26 @@ export async function hentManglende() {
         else forsøgt.set(t.id, Date.now());
       } catch { forsøgt.set(t.id, Date.now()); /* prøv igen senere */ }
     }
+    // Vejr ved hver fangst (fangstens tidspunkt og sted)
+    for (const t0 of await db.getAll('trips')) {
+      if (t0.cirka) continue;
+      for (const c of t0.catches) {
+        const p = c.spot || c.plads || (t0.lat != null ? { lat: t0.lat, lon: t0.lon } : null);
+        const kl = c.time || t0.start;
+        if (c.weather || !p || !kl) continue;
+        const nøgle = 'c' + c.id;
+        if (Date.now() - (forsøgt.get(nøgle) || 0) < 10 * 60 * 1000) continue;
+        try {
+          const w = await hentVejr({ date: c.date || t0.date, start: kl, lat: p.lat, lon: p.lon });
+          if (!w) { forsøgt.set(nøgle, Date.now()); continue; }
+          const t = await db.get('trips', t0.id);
+          const cc = t?.catches.find((x) => x.id === c.id);
+          if (!cc) continue;
+          cc.weather = w;
+          await db.put('trips', t); n++;
+        } catch { forsøgt.set(nøgle, Date.now()); }
+      }
+    }
   } finally { kører = false; }
   return n;
 }

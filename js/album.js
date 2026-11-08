@@ -25,7 +25,7 @@ export async function mount(el) {
 
   el.innerHTML = `
     <section class="card">
-      <h2>🖼️ Album <span class="muted">(${fotos.length} billeder)</span></h2>
+      <h2>🖼️ Fotogalleri <span class="muted">(${fotos.length} billeder)</span></h2>
       <div class="filtre">
         ${sel('art', filter.art, arter, 'Alle arter')}
         ${sel('sted', filter.sted, steder, 'Alle søer')}
