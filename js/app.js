@@ -5,7 +5,7 @@ import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 import * as kort from './kort.js';
 
-const VERSION = '0.15.0';
+const VERSION = '0.16.0';
 
 const routes = {
   fangster: {
