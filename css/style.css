@@ -421,3 +421,5 @@ ul.par > li { border-top: 1px solid var(--line); padding: 10px 0; }
 
 /* Lange fanenavne (fx "Gamle fangster") må gå over to linjer */
 .tabs a { white-space: normal; text-align: center; line-height: 1.1; }
+
+select:disabled { opacity: .5; }

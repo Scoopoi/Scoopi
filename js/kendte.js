@@ -18,7 +18,8 @@ export function lighed(a, b) {
   if (A.species?.toLowerCase() !== B.species?.toLowerCase()) return null;
   if (A.carpType && B.carpType && A.carpType !== B.carpType) return null; // skæl ≠ spejl
   if (A.fishId && A.fishId === B.fishId) return null; // allerede koblet
-  const år = Math.abs(new Date(dato(a)) - new Date(dato(b))) / (365 * 864e5);
+  // Ukendt dato: regn med op til 5 års vækst
+  const år = a.t.cirka === 'ukendt' || b.t.cirka === 'ukendt' ? 5 : Math.abs(new Date(dato(a)) - new Date(dato(b))) / (365 * 864e5);
   let score = 50;
   const grunde = [];
   if (A.carpType && A.carpType === B.carpType) { score += 15; grunde.push(`begge ${A.carpType.toLowerCase()}`); }

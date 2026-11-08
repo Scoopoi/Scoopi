@@ -65,8 +65,11 @@ export const minutterSiden = (t) => Math.max(0, Math.round((ms(today(), nu()) - 
 
 export const varighed = (m) => m == null ? '' : `${Math.floor(m / 60)} t${m % 60 ? ` ${m % 60} min` : ''}`;
 export const MÅNEDER = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december'];
-// Gamle fangster med cirka-dato: 'aar' = kun år kendt, 'maaned' = år og måned kendt.
-export const cirkaTekst = (d, cirka) => cirka === 'aar' ? `ca. ${d.slice(0, 4)}` : `ca. ${MÅNEDER[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
+// Gamle fangster med cirka-dato: 'aar' = kun år kendt, 'maaned' = år og måned kendt, 'ukendt' = ingen dato.
+export const UKENDT_DATO = '1900-01-01';
+export const cirkaTekst = (d, cirka) => cirka === 'ukendt' ? 'dato ukendt' : cirka === 'aar' ? `ca. ${d.slice(0, 4)}` : `ca. ${MÅNEDER[+d.slice(5, 7) - 1]} ${d.slice(0, 4)}`;
+// Tæller turen med i statistikken? (ikke gamle fangster med ukendt dato)
+export const iStatistik = (t) => t.cirka !== 'ukendt';
 // Dato for en fangst til visning (respekterer cirka-datoer)
 export const fangstDato = (c, t) => (t?.cirka ? cirkaTekst(c.date || t.date, t.cirka) : datoTekst(c.date || t.date));
 export const datoTekst = (d) => new Date(d + 'T12:00').toLocaleDateString('da-DK', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });

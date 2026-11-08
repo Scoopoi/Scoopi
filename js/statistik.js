@@ -1,6 +1,6 @@
 // Statistik: simple søjlediagrammer over agn, smag, farve og vejr + rekorder.
 import * as db from './db.js';
-import { esc, fmt, turMinutter, datoTekst, fangstDato } from './util.js';
+import { esc, fmt, turMinutter, datoTekst, fangstDato, iStatistik } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
 import { kendteSektion } from './kendte.js';
 
@@ -14,7 +14,10 @@ const FARVEKODER = {
 
 export async function mount(view) {
   hentManglende().then((n) => { if (n && view.isConnected) mount(view); });
-  const trips = await db.getAll('trips');
+  // Gamle fangster med ukendt dato tæller ikke med i statistikken
+  const alleTure = await db.getAll('trips');
+  const trips = alleTure.filter(iStatistik);
+  const udeladt = alleTure.length - trips.length;
   const arter = [...new Set(trips.flatMap((t) => t.catches.map((c) => c.species)))].sort((a, b) => a.localeCompare(b, 'da'));
   if (artFilter !== 'alle' && !arter.includes(artFilter)) artFilter = 'alle';
   const venner = [...new Set(trips.flatMap((t) => t.catches.map((c) => c.caughtBy)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'da'));
@@ -46,6 +49,7 @@ export async function mount(view) {
           ${venner.map((v) => `<option value="${esc(v)}" ${v === hvemFilter ? 'selected' : ''}>${esc(v)}</option>`).join('')}
         </select>
       </label>` : ''}
+      ${udeladt ? `<p class="muted small">${udeladt} gammel fangst${udeladt > 1 ? 'er' : ''} med ukendt dato tæller ikke med.</p>` : ''}
       <div class="kpis">
         <div><b>${trips.length}</b><span>ture</span></div>
         <div><b>${fisk.length}</b><span>fisk</span></div>

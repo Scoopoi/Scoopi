@@ -1,6 +1,6 @@
 // "Gamle fangster": skriv hurtigt én fangst ind, og se alle dine fisk samlet.
 import * as db from './db.js';
-import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER, gyldigTid } from './util.js';
+import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER, gyldigTid, UKENDT_DATO } from './util.js';
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
 import { retTur } from './ture.js';
@@ -74,7 +74,7 @@ export async function mount(view) {
           <select name="cMaaned"><option value="">Ved ikke</option>${MÅNEDER.map((m, i) => `<option value="${String(i + 1).padStart(2, '0')}">${m[0].toUpperCase() + m.slice(1)}</option>`).join('')}</select>
         </label>
         <label>År (ca.)
-          <select name="cAar">${Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => new Date().getFullYear() - i).map((y) => `<option>${y}</option>`).join('')}</select>
+          <select name="cAar"><option value="">Ved ikke</option>${Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => new Date().getFullYear() - i).map((y, i) => `<option ${i === 0 ? 'selected' : ''}>${y}</option>`).join('')}</select>
         </label>
       </div>
       
@@ -148,6 +148,8 @@ export async function mount(view) {
   // Gammel fangst med cirka-dato
   const gammel = form.querySelector('#gammel');
   const erGammel = () => gammel.checked;
+  form.cAar.addEventListener('change', () => { form.cMaaned.disabled = !form.cAar.value; if (!form.cAar.value) form.cMaaned.value = ''; turTxt(); });
+  form.cMaaned.disabled = !form.cAar.value;
   gammel.onchange = () => {
     form.querySelector('#praecis').hidden = erGammel();
     form.querySelector('#cirka').hidden = !erGammel();
@@ -194,7 +196,12 @@ export async function mount(view) {
 
   // Vis om fangsten kommer på en eksisterende tur
   const turTxt = () => {
-    if (erGammel()) { form.querySelector('#tur-txt').textContent = 'Gemmes som gammel fangst med cirka-dato (uden vejr og timer).'; return; }
+    if (erGammel()) {
+      form.querySelector('#tur-txt').textContent = form.cAar.value
+        ? 'Gemmes som gammel fangst med cirka-dato (uden vejr og timer). Felter, du ikke kan huske, kan bare stå tomme.'
+        : 'Dato ukendt: fangsten gemmes i album og kendte fisk, men tæller ikke med i statistikken.';
+      return;
+    }
     const f = form.place.value.trim() && gyldigTid(form.time.value) ? findTur(trips, form.place.value, form.date.value, form.time.value) : null;
     form.querySelector('#tur-txt').textContent = f
       ? `Fangsten lægges på din tur ${datoTekst(f.date)} kl. ${f.start}${f.end ? ` til ${slutDato(f) !== f.date ? datoTekst(slutDato(f)) + ' ' : ''}kl. ${f.end}` : ''}.`
@@ -212,8 +219,8 @@ export async function mount(view) {
     const c = lasFisk(fel);
     if (!c.species) fejl.push('art');
     if (fejl.length) { const er = form.querySelector('#err'); er.textContent = 'Udfyld: ' + fejl.join(', ') + '.'; er.hidden = false; return; }
-    const mdr = form.cMaaned.value;
-    const cirkaDato = `${form.cAar.value}-${mdr || '07'}-${mdr ? '15' : '01'}`;
+    const mdr = form.cAar.value ? form.cMaaned.value : '';
+    const cirkaDato = form.cAar.value ? `${form.cAar.value}-${mdr || '07'}-${mdr ? '15' : '01'}` : UKENDT_DATO;
     c.time = erGammel() ? null : form.time.value;
     c.date = erGammel() ? cirkaDato : form.date.value;
     await gemFotos(fel);
@@ -235,7 +242,7 @@ export async function mount(view) {
       await db.put('trips', {
         id: uid(), date: c.date, waterType: form.waterType.value, place: form.place.value.trim(),
         start: erGammel() ? '12:00' : form.time.value, end: null, catches: [c], note: noteTxt,
-        ...(erGammel() ? { cirka: mdr ? 'maaned' : 'aar' } : {}),
+        ...(erGammel() ? { cirka: !form.cAar.value ? 'ukendt' : mdr ? 'maaned' : 'aar' } : {}),
         lat: pos?.lat ?? null, lon: pos?.lon ?? null, weather: null, createdAt: now, updatedAt: now,
       });
     }
