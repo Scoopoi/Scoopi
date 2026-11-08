@@ -4,8 +4,9 @@ import * as fangster from './fangster.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 import * as kort from './kort.js';
+import * as adgang from './adgang.js';
 
-const VERSION = '0.16.0';
+const VERSION = '0.17.0';
 
 const routes = {
   fangster: {
@@ -67,7 +68,17 @@ function soon(heading, intro, items) {
 const view = document.getElementById('view');
 const title = document.getElementById('title');
 
-function render() {
+let adgangOk = false;
+addEventListener('adgang-aendret', () => { adgangOk = false; render(); });
+
+async function render() {
+  // Kun godkendte medlemmer må bruge appen
+  if (!adgangOk) {
+    document.body.classList.add('laast');
+    if (!(await adgang.tjek(view, title))) return;
+    adgangOk = true;
+    document.body.classList.remove('laast');
+  }
   const key = location.hash.replace(/^#\//, '') || 'ture';
   const route = routes[key] || routes.ture;
   title.textContent = route.title;
@@ -77,7 +88,7 @@ function render() {
     if (a.dataset.route === key) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
-  if (key === 'indstillinger') setupInstall();
+  if (key === 'indstillinger') { setupInstall(); adgang.visKonto(view); }
 }
 
 // Installér-knap (Android/Chrome)
