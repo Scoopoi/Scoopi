@@ -4,13 +4,14 @@ import * as fangster from './fangster.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 import * as kort from './kort.js';
+import * as album from './album.js';
 import * as adgang from './adgang.js';
 import { startTidsfelter } from './util.js';
 import { omdøbTigernødder } from './fisk.js';
 startTidsfelter();
 omdøbTigernødder();
 
-const VERSION = '0.23.0';
+const VERSION = '0.24.0';
 
 const routes = {
   fangster: {
@@ -25,13 +26,9 @@ const routes = {
     title: 'Statistik',
     mount: statistik.mount,
   },
-  prognose: {
-    title: 'Prognose',
-    html: soon('Gode fiskedage', 'Score for de næste dage ud fra vejret og dine tidligere ture.', [
-      'Prognose fra Open-Meteo',
-      'Sammenligning med dine gode ture',
-      'Kort forklaring for hver dag',
-    ]),
+  galleri: {
+    title: 'Fotogalleri',
+    mount: album.mount,
   },
   drone: {
     title: 'Drone',
