@@ -122,9 +122,10 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
     <div class="fotos"></div>
     <div class="exif-fisk" hidden></div>
     <div class="foto-knapper">
-      <label class="foto-btn"><input type="file" accept="image/*" multiple><span>🖼️ Vælg fra galleri</span></label>
-      <label class="foto-btn"><input type="file" accept="image/*" capture="environment"><span>📷 Tag billede</span></label>
-    </div>`;
+      <label class="foto-btn"><input type="file" accept="image/*" multiple><span class="fb-gal">🖼️ Vælg billeder fra galleri</span></label>
+      <label class="foto-btn"><input type="file" accept="image/*" capture="environment"><span class="fb-kam">📷 Tag billede</span></label>
+    </div>
+    <p class="muted small foto-tip"></p>`;
   el.dataset.id = c.id || uid();
   el._dato = c.date || null;
   el._fotoIds = [...(c.photoIds || [])];
@@ -171,18 +172,27 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
   return el;
 }
 
+// Billederne vises som én bunke (første billede foran, tal for antal). Tryk åbner dem alle.
 async function visFotos(el) {
   const box = el.querySelector('.fotos');
   const gamle = await Promise.all(el._fotoIds.map(async (id) => ({ id, url: await fotoUrl(id) })));
   const alle = [...gamle.filter((f) => f.url), ...el._nye];
-  box.innerHTML = alle.map((f) => `<span class="thumb"><img src="${f.url}" alt="" data-vis="${f.id}"><button type="button" class="x" data-fjern="${f.id}" aria-label="Fjern billede">✕</button></span>`).join('');
-  box.querySelectorAll('[data-vis]').forEach((img, i) => img.onclick = () => visGalleri(alle.map((f) => f.url), i, true));
-  box.querySelectorAll('[data-fjern]').forEach((b) => b.onclick = () => {
-    const id = b.dataset.fjern;
-    el._fotoIds = el._fotoIds.filter((x) => x !== id);
-    el._nye = el._nye.filter((x) => x.id !== id);
-    visFotos(el);
-  });
+  const n = alle.length;
+  box.innerHTML = n ? `<button type="button" class="thumb${n > 1 ? ' stak' : ''}" aria-label="Vis billeder"><img src="${alle[0].url}" alt="">${n > 1 ? `<span class="antal">${n}</span>` : ''}</button>` : '';
+  box.querySelector('.thumb')?.addEventListener('click', () => visGalleri(alle.map((f) => f.url), 0, true, null, {
+    fjern: (i) => {
+      const id = alle[i].id;
+      el._fotoIds = el._fotoIds.filter((x) => x !== id);
+      el._nye = el._nye.filter((x) => x.id !== id);
+      alle.splice(i, 1);
+      visFotos(el);
+    },
+  }));
+  el.querySelector('.fb-gal').textContent = n ? '🖼️ Tilføj flere fra galleri' : '🖼️ Vælg billeder fra galleri';
+  el.querySelector('.fb-kam').textContent = n ? '📷 Tag et billede mere' : '📷 Tag billede';
+  el.querySelector('.foto-tip').textContent = n
+    ? `${n} billede${n > 1 ? 'r' : ''} på fisken – tryk på billedet for at se dem alle.`
+    : 'Så mange billeder du vil. I galleriet: hold fingeren på et billede, og tryk så på flere.';
 }
 
 const c0date = (el) => el._dato || null;
@@ -276,7 +286,7 @@ export async function tilfoejFotos(tripId, catchId, files) {
 }
 
 // Billedgalleri i fuld skærm: bladr med pile, swipe eller tastatur.
-export async function visGalleri(kilder, start = 0, erUrl = false, tekster = null) {
+export async function visGalleri(kilder, start = 0, erUrl = false, tekster = null, { fjern } = {}) {
   // Med billed-id'er (ikke url'er) kan billederne også slettes herfra.
   let ids = erUrl ? null : [...kilder];
   let urls = erUrl ? [...kilder] : await Promise.all(kilder.map(fotoUrl));
@@ -290,7 +300,7 @@ export async function visGalleri(kilder, start = 0, erUrl = false, tekster = nul
   ov.innerHTML = `
     <img alt="">
     <button type="button" class="g-luk" aria-label="Luk">✕</button>
-    ${ids ? '<button type="button" class="g-slet" aria-label="Slet billede">🗑 Slet</button>' : ''}
+    ${ids || fjern ? `<button type="button" class="g-slet" aria-label="Slet billede">🗑 ${fjern ? 'Fjern' : 'Slet'}</button>` : ''}
     <button type="button" class="g-pil g-forr" aria-label="Forrige">‹</button><button type="button" class="g-pil g-naeste" aria-label="Næste">›</button>
     <div class="g-tal"></div>
     <div class="g-tekst" hidden></div>`;
@@ -308,11 +318,15 @@ export async function visGalleri(kilder, start = 0, erUrl = false, tekster = nul
   ov.querySelector('.g-forr').addEventListener('click', () => gå(-1));
   ov.querySelector('.g-naeste').addEventListener('click', () => gå(1));
   ov.querySelector('.g-slet')?.addEventListener('click', async () => {
-    if (!confirm('Slet dette billede? Det kan ikke fortrydes.')) return;
-    await sletFoto(ids[i]);
-    ids.splice(i, 1); urls.splice(i, 1); tk?.splice(i, 1);
-    // Opdater siden bagved (samme side tegnes igen)
-    dispatchEvent(new HashChangeEvent('hashchange'));
+    if (fjern) { if (!confirm('Fjern dette billede fra fisken?')) return; fjern(i); }
+    else {
+      if (!confirm('Slet dette billede? Det kan ikke fortrydes.')) return;
+      await sletFoto(ids[i]);
+      ids.splice(i, 1);
+      // Opdater siden bagved (samme side tegnes igen)
+      dispatchEvent(new HashChangeEvent('hashchange'));
+    }
+    urls.splice(i, 1); tk?.splice(i, 1);
     if (!urls.length) { luk(); return; }
     i = Math.min(i, urls.length - 1);
     vis();

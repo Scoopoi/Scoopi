@@ -438,3 +438,11 @@ select:disabled { opacity: .5; }
 .fly-b img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .fly-b span { position: absolute; left: 0; right: 0; bottom: 0; font-size: .72rem; color: #fff; background: rgba(0,0,0,.6); padding: 2px 4px; }
 .advarsel { background: rgba(242,193,78,.18); border: 1px solid var(--guld); border-radius: 10px; padding: 8px 12px; font-size: .9rem; margin: 6px 0; }
+
+/* Bunke af billeder: ét billede foran, kanter af de andre bagved */
+.stak { overflow: visible !important; box-shadow: 4px -4px 0 -1px #e9dfc4, 4px -4px 0 0 rgba(0,0,0,.28), 8px -8px 0 -2px #d9c99d, 8px -8px 0 -1px rgba(0,0,0,.28); margin: 8px 8px 0 0; }
+.stak img { border-radius: inherit; }
+.fotos .thumb { padding: 0; border: 0; background: none; border-radius: 8px; }
+.thumb .antal, .a-foto .antal { position: absolute; right: 4px; bottom: 4px; background: rgba(0,0,0,.65); color: #fff; font-size: .75rem; font-weight: 600; padding: 0 7px; border-radius: 99px; z-index: 1; }
+.a-foto .antal { bottom: auto; top: 4px; }
+.album { gap: 12px 12px; padding-top: 8px; }

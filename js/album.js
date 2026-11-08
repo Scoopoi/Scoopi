@@ -20,19 +20,20 @@ export async function mount(el) {
     && (filter.aar === 'alle' || (filter.aar === 'Ukendt' ? x.t.cirka === 'ukendt' : x.t.cirka !== 'ukendt' && (x.c.date || x.t.date).startsWith(filter.aar)))
     && (filter.hvem === 'alle' || (filter.hvem === 'mig' ? !x.c.caughtBy : x.c.caughtBy === filter.hvem));
   const vist = alle.filter(ok);
-  const fotos = vist.flatMap((x) => (x.c.photoIds || []).map((id) => ({ id, x })));
+  const medFoto = vist.filter((x) => x.c.photoIds?.length); // én bunke pr. fisk
+  const antalFotos = medFoto.reduce((s, x) => s + x.c.photoIds.length, 0);
   const sel = (navn, værdi, liste, alleTekst) => `<select data-f="${navn}" class="mini-select"><option value="alle">${alleTekst}</option>${liste.map((v) => `<option ${v === værdi ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
 
   el.innerHTML = `
     <section class="card">
-      <h2>🖼️ Fotogalleri <span class="muted">(${fotos.length} billeder)</span></h2>
+      <h2>🖼️ Fotogalleri <span class="muted">(${medFoto.length} fisk · ${antalFotos} billeder)</span></h2>
       <div class="filtre">
         ${sel('art', filter.art, arter, 'Alle arter')}
         ${sel('sted', filter.sted, steder, 'Alle søer')}
         ${sel('aar', filter.aar, år, 'Alle år')}
         ${venner.length ? `<select data-f="hvem" class="mini-select"><option value="alle">Alle</option><option value="mig" ${filter.hvem === 'mig' ? 'selected' : ''}>Kun mine</option>${venner.map((v) => `<option ${v === filter.hvem ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>` : ''}
       </div>
-      ${fotos.length ? `<div class="album">${fotos.map((f, i) => `<button type="button" class="a-foto" data-i="${i}" aria-label="Billede ${i + 1}"><img alt="" data-id="${f.id}"><span>${f.x.c.weightKg != null ? `${fmt(f.x.c.weightKg)} kg` : esc(f.x.c.carpType || f.x.c.species)}${f.x.c.fishId ? ' 🏷️' : ''}</span></button>`).join('')}</div>`
+      ${medFoto.length ? `<div class="album">${medFoto.map((x, i) => { const n = x.c.photoIds.length; return `<button type="button" class="a-foto${n > 1 ? ' stak' : ''}" data-i="${i}" aria-label="Fisk ${i + 1}, ${n} billeder"><img alt="" data-id="${x.c.photoIds[0]}">${n > 1 ? `<b class="antal">${n}</b>` : ''}<span>${x.c.weightKg != null ? `${fmt(x.c.weightKg)} kg` : esc(x.c.carpType || x.c.species)}${x.c.fishId ? ' 🏷️' : ''}</span></button>`; }).join('')}</div>`
         : '<p class="muted">Ingen billeder endnu. Tilføj billeder på dine fangster.</p>'}
     </section>
     <section class="card" id="scan">
@@ -47,7 +48,7 @@ export async function mount(el) {
   // Miniaturer (hentes efterhånden)
   el.querySelectorAll('.album img').forEach(async (img) => { const u = await fotoUrl(img.dataset.id); if (u) img.src = u; });
   const tekst = (x) => `${fiskTekst(x.c)}${x.c.fishId && kendte[x.c.fishId] ? ` · 🏷️ <b>${esc(kendte[x.c.fishId])}</b>` : ''}<br><span>${esc(x.t.place)} · ${fangstDato(x.c, x.t)}</span>`;
-  el.querySelectorAll('.a-foto').forEach((b) => b.onclick = () => visGalleri(fotos.map((f) => f.id), +b.dataset.i, false, fotos.map((f) => tekst(f.x))));
+  el.querySelectorAll('.a-foto').forEach((b) => b.onclick = () => { const x = medFoto[+b.dataset.i]; visGalleri(x.c.photoIds, 0, false, x.c.photoIds.map(() => tekst(x))); });
   el.querySelector('#alle-soer').onchange = (e) => { alleSoer = e.target.checked; };
   el.querySelector('#scan-knap').onclick = () => scan(el, vist);
 }

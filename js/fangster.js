@@ -93,14 +93,14 @@ export async function mount(view) {
       </div>
       ${vist.length ? `<ul class="catch-list">${vist.map(({ c, t }) => `
         <li>
-          <div class="cimg" data-foto="${c.photoIds?.[0] || ''}" data-alle="${(c.photoIds || []).join(',')}">${c.photoIds?.length ? '' : '🐟'}</div>
+          <div class="cimg${c.photoIds?.length > 1 ? ' stak' : ''}" data-foto="${c.photoIds?.[0] || ''}" data-alle="${(c.photoIds || []).join(',')}">${c.photoIds?.length ? '' : '🐟'}</div>
           <div class="cbody">
             <div>${fiskTekst(c)}</div>
             ${c.fishId && kendte[c.fishId] ? `<div class="small kendt">🏷️ <b>${esc(kendte[c.fishId])}</b> · fanget ${antalPrFisk[c.fishId]} gange</div>` : ''}
             <div class="muted small">${esc(t.place)} · ${fangstDato(c, t)}</div>
             ${c.weather ? `<div class="small muted wx">${vejrTekst(c.weather)}</div>` : t.weather ? `<div class="small muted wx">${vejrTekst(t.weather)} <i>(ved turens start)</i></div>` : !t.cirka && (c.spot || c.plads || t.lat != null) ? '<div class="small muted wx">Vejr hentes, når der er net …</div>' : ''}
             <div class="row-btns">
-              <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>🖼️ Tilføj billeder</span></label>
+              <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>🖼️ ${c.photoIds?.length ? 'Tilføj flere billeder' : 'Tilføj billeder'}</span></label>
               ${c.plads || c.spot ? `<button type="button" class="ghost sm" data-kort="${t.id}|${c.id}">🗺️ Kort</button>` : ''}
               <button type="button" class="ghost sm" data-samme="${c.id}">🔍 Samme fisk?</button>
               <button type="button" class="ghost sm" data-ret="${t.id}">Ret</button>
