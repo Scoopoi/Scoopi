@@ -4,7 +4,8 @@ import * as db from './db.js';
 import { esc, uid, today, datoTekst, toast, fmt } from './util.js';
 import { DRONER, parseSRT, vedTid, lasBilledeData, meterPrPixel, pixelTilGps, afstand } from './dji.js';
 import * as sokort from './sokort.js';
-import { findKarper } from './karpefinder.js';
+import { kandidater } from './karpefinder.js';
+import { sandsynlighed, tærskel } from './karpemodel.js';
 
 const MAX_W = 1280; // arbejdsbredde i pixels
 
@@ -106,13 +107,7 @@ export async function mount(view) {
         <label>Følsomhed: <b id="sens-v"></b>
           <input type="range" id="sens" min="1" max="100" value="65">
         </label>
-        <div class="seg small-seg">
-          <label><input type="radio" name="tone" value="lys" checked><span>Lyse (polfilter)</span></label>
-          <label><input type="radio" name="tone" value="mork"><span>Mørke</span></label>
-          <label><input type="radio" name="tone" value="begge"><span>Begge</span></label>
-        </div>
-        <label class="check"><input type="checkbox" id="ingrode" checked> Ignorér grøn grøde</label>
-        <label class="check"><input type="checkbox" id="mask"> Vis hvad der blev fundet</label>
+        <p class="muted small">Tælleren finder både lyse og mørke karper og er trænet på dine markerede optagelser. Højere følsomhed viser flere "måske" – også flere fejl.</p>
         <button type="button" class="ghost sm" id="reset">Find karper igen</button>
       </details>
 
@@ -252,13 +247,10 @@ function bindUpload(view) {
       const alt = meta?.alt ?? (Number.isFinite(manuelHøjde) ? manuelHøjde : null);
       const mPrPx = alt ? meterPrPixel(alt, model.hfov, w0) / sc : null;
       const len = mPrPx ? Math.max(8, Math.min(200, Math.round(0.65 / mPrPx))) : +view.querySelector('#len').value;
-      const res = findKarper(ctx.getImageData(0, 0, w, h).data, w, h, {
-        len, sens: +view.querySelector('#sens').value, tone: view.querySelector('input[name=tone]:checked').value,
-        ingrode: view.querySelector('#ingrode').checked, metode: 'toppe', afstand: 0.55,
-      });
+      const markers = findMedModel(ctx.getImageData(0, 0, w, h).data, w, h, len, +view.querySelector('#sens').value, mPrPx);
       const blob = await new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.8));
       flyvning.billeder.push({ t, blob, url: URL.createObjectURL(blob), w, h, w0, meta, alt, len, mPrPx,
-        markers: res.markers.map((m) => ({ ...m, status: 'maaske', cm: mPrPx ? Math.round(m.lengthPx * mPrPx * 100) : null })) });
+        markers });
       prog.value = Math.round(((k + 1) / tider.length) * 100);
       txt.textContent = `Billede ${k + 1} af ${tider.length} · ${flyvning.billeder.reduce((s2, b) => s2 + b.markers.length, 0)} mulige karper indtil nu`;
       await new Promise((ok) => setTimeout(ok, 0)); // lad skærmen opdatere
@@ -387,17 +379,15 @@ function analyseFra(view, source, w0, h0, forvalg = null) {
   const settings = () => ({
     len: +$('#len').value,
     sens: +$('#sens').value,
-    tone: view.querySelector('input[name=tone]:checked').value,
-    ingrode: $('#ingrode').checked,
+
   });
   let calib = false;
   let run = () => {
     const s = settings();
     $('#len-v').textContent = `${s.len} px`;
     $('#sens-v').textContent = `${s.sens}`;
-    const res = findKarper(pixels.data, w, h, { ...s, metode: 'toppe', afstand: 0.55 });
-    state.mask = res.mask;
-    state.markers = res.markers.map((m) => ({ ...m, status: 'maaske', cm: state.mPrPx ? Math.round(m.lengthPx * state.mPrPx * 100) : null }));
+    state.mask = null;
+    state.markers = findMedModel(pixels.data, w, h, s.len, s.sens, state.mPrPx);
     state.settings = s;
     draw(view, calib);
   };
@@ -406,9 +396,7 @@ function analyseFra(view, source, w0, h0, forvalg = null) {
   $('#len').oninput = () => { calib = true; $('#len-v').textContent = `${$('#len').value} px`; draw(view, true); later(); };
   $('#len').onchange = () => { calib = false; draw(view, false); };
   $('#sens').oninput = later;
-  view.querySelectorAll('input[name=tone]').forEach((r) => r.onchange = run);
-  $('#ingrode').onchange = run;
-  $('#mask').onchange = () => draw(view, false);
+
   $('#reset').onclick = run;
 
   cv.onclick = (e) => {
@@ -489,6 +477,15 @@ function gemFlyBillede() {
   tegnFlyResultat(document.querySelector('#dview'));
 }
 
+// Find karper: kandidater (lyse og mørke) + den trænede model. Alle fund er "måske".
+function findMedModel(data, w, h, len, sens, mPrPx) {
+  const { kandidater: k } = kandidater(data, w, h, { len });
+  const t = tærskel(sens);
+  return k.map((c) => ({ ...c, p: sandsynlighed(c.e) }))
+    .filter((c) => c.p >= t)
+    .map(({ e, ...c }) => ({ ...c, n: 1, status: 'maaske', cm: mPrPx ? Math.round(c.lengthPx * mPrPx * 100) : null }));
+}
+
 const antal = () => state.markers.reduce((s, m) => s + m.n, 0);
 const tæl = (status, liste = state.markers) => liste.filter((m) => (m.status || 'sikker') === status).reduce((s, m) => s + m.n, 0);
 
@@ -502,13 +499,6 @@ function draw(view, calib) {
   const ctx = cv.getContext('2d');
   const { w, h } = state;
   ctx.drawImage(state.base, 0, 0);
-  if (view.querySelector('#mask').checked && state.mask) {
-    const ov = ctx.getImageData(0, 0, w, h);
-    for (let i = 0; i < state.mask.length; i++) {
-      if (state.mask[i]) { ov.data[i * 4] = 255; ov.data[i * 4 + 1] = 40; ov.data[i * 4 + 2] = 200; }
-    }
-    ctx.putImageData(ov, 0, 0);
-  }
   const len = +view.querySelector('#len').value;
   const r = Math.max(7, len * 0.22); // lille ring midt på fisken, så tætte stimer kan ses
   const lw = Math.max(2, w / 500);
