@@ -101,7 +101,8 @@ Læg denne fil i roden af repoet `fiske-app`. Claude Code læser den automatisk.
 - **Gruppe (næste trin, valgt: Supabase):** 6-8 venner skal kunne se hinandens ture, fangster og billeder, så genfangster findes på tværs af gruppen. Login via e-mail-link, data i EU.
   - En gruppe har **egne søer** (fx Vallensbæk Sø og Tueholm Sø). Ture i gruppens søer deles automatisk med gruppen (inkl. billeder og kendte fisk). **Ture i alle andre søer forbliver private** og ligger kun hos ejeren.
   - En tur i en gruppesø kan markeres som privat. Man kan være med i flere grupper.
-  - Venner tilføjes med invitationskode/link. Kun egne ture kan rettes; andres kan ses.
+  - Venner tilføjes med invitationskode/link.
+  - **Rettigheder:** alle kan rette og slette deres **egne** ture, fangster, billeder og drone-analyser; **ingen** kan slette andres. **Scoopi er administrator** af gruppen og kan slette alt i gruppen. Håndhæves i databasen (Row Level Security: `ejer = auth.uid()` eller rolle `admin` i gruppen), ikke kun i appen.
   - Lokal-først: IndexedDB er stadig hovedlager (virker offline); delte ture synkroniseres op/ned, når der er net.
   - Venter på at Scoopi opretter et Supabase-projekt (EU-region) og sender Project URL + anon public key (må gerne stå i koden; sikkerheden ligger i Row Level Security). **Aldrig** service_role-nøglen.
 - **Gamle fangster:** Fangster → "📅 Gammel fangst" med ca. måned (eller "ved ikke") og år. Gemmes som tur med `cirka: 'maaned'|'aar'` (dato = 15. i måneden / 1. juli), vises som "ca. juni 2018". Ingen vejr, tæller ikke i timer; tæller i rekorder, kendte fisk og samme-fisk. Billedets EXIF-dato foreslås automatisk ("Brug den dato").

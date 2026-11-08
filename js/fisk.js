@@ -197,7 +197,10 @@ export async function tilfoejFotos(tripId, catchId, files) {
 
 // Billedgalleri i fuld skærm: bladr med pile, swipe eller tastatur.
 export async function visGalleri(kilder, start = 0, erUrl = false) {
-  const urls = erUrl ? kilder : (await Promise.all(kilder.map(fotoUrl))).filter(Boolean);
+  // Med billed-id'er (ikke url'er) kan billederne også slettes herfra.
+  let ids = erUrl ? null : [...kilder];
+  let urls = erUrl ? [...kilder] : await Promise.all(kilder.map(fotoUrl));
+  if (ids) { const ok = urls.map((u, k) => (u ? k : -1)).filter((k) => k >= 0); ids = ok.map((k) => ids[k]); urls = ok.map((k) => urls[k]); }
   if (!urls.length) return;
   let i = Math.min(start, urls.length - 1);
   const ov = document.createElement('div');
@@ -206,16 +209,31 @@ export async function visGalleri(kilder, start = 0, erUrl = false) {
   ov.innerHTML = `
     <img alt="">
     <button type="button" class="g-luk" aria-label="Luk">✕</button>
-    ${urls.length > 1 ? '<button type="button" class="g-pil g-forr" aria-label="Forrige">‹</button><button type="button" class="g-pil g-naeste" aria-label="Næste">›</button>' : ''}
+    ${ids ? '<button type="button" class="g-slet" aria-label="Slet billede">🗑 Slet</button>' : ''}
+    <button type="button" class="g-pil g-forr" aria-label="Forrige">‹</button><button type="button" class="g-pil g-naeste" aria-label="Næste">›</button>
     <div class="g-tal"></div>`;
   const img = ov.querySelector('img');
-  const vis = () => { img.src = urls[i]; ov.querySelector('.g-tal').textContent = urls.length > 1 ? `${i + 1} / ${urls.length}` : ''; };
+  const vis = () => {
+    img.src = urls[i];
+    ov.querySelector('.g-tal').textContent = urls.length > 1 ? `${i + 1} / ${urls.length}` : '';
+    ov.querySelectorAll('.g-pil').forEach((b) => { b.hidden = urls.length < 2; });
+  };
   const gå = (d) => { i = (i + d + urls.length) % urls.length; vis(); };
   const luk = () => { ov.remove(); removeEventListener('keydown', tast); };
   const tast = (e) => { if (e.key === 'Escape') luk(); if (e.key === 'ArrowLeft') gå(-1); if (e.key === 'ArrowRight') gå(1); };
   ov.querySelector('.g-luk').onclick = luk;
-  ov.querySelector('.g-forr')?.addEventListener('click', () => gå(-1));
-  ov.querySelector('.g-naeste')?.addEventListener('click', () => gå(1));
+  ov.querySelector('.g-forr').addEventListener('click', () => gå(-1));
+  ov.querySelector('.g-naeste').addEventListener('click', () => gå(1));
+  ov.querySelector('.g-slet')?.addEventListener('click', async () => {
+    if (!confirm('Slet dette billede? Det kan ikke fortrydes.')) return;
+    await sletFoto(ids[i]);
+    ids.splice(i, 1); urls.splice(i, 1);
+    // Opdater siden bagved (samme side tegnes igen)
+    dispatchEvent(new HashChangeEvent('hashchange'));
+    if (!urls.length) { luk(); return; }
+    i = Math.min(i, urls.length - 1);
+    vis();
+  });
   ov.addEventListener('click', (e) => { if (e.target === ov) luk(); });
   let x0 = null;
   ov.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
@@ -223,6 +241,20 @@ export async function visGalleri(kilder, start = 0, erUrl = false) {
   addEventListener('keydown', tast);
   document.body.append(ov);
   vis();
+}
+
+// Sletter ét billede: fjernes fra fisken, der bruger det, og fra databasen.
+export async function sletFoto(id) {
+  for (const t of await db.getAll('trips')) {
+    let ændret = false;
+    for (const c of t.catches) {
+      if (c.photoIds?.includes(id)) { c.photoIds = c.photoIds.filter((x) => x !== id); ændret = true; }
+    }
+    if (ændret) { t.updatedAt = new Date().toISOString(); await db.put('trips', t); }
+  }
+  await db.remove('photos', id);
+  const u = urlCache.get(id);
+  if (u) { URL.revokeObjectURL(u); urlCache.delete(id); }
 }
 
 // Alle "📷 3"-knapper i appen åbner galleriet.
