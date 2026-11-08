@@ -4,7 +4,7 @@ import * as fangster from './fangster.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 
-const VERSION = '0.11.0';
+const VERSION = '0.12.0';
 
 const routes = {
   fangster: {
@@ -49,7 +49,7 @@ const routes = {
       </section>
       <section class="card">
         <h2>Om</h2>
-        <p class="muted">Fiske-app version ${VERSION}</p>
+        <p class="muted">Karpeloggen version ${VERSION}</p>
       </section>`,
   },
 };
@@ -70,7 +70,7 @@ function render() {
   const key = location.hash.replace(/^#\//, '') || 'ture';
   const route = routes[key] || routes.ture;
   title.textContent = route.title;
-  document.title = `${route.title} – Fiske-app`;
+  document.title = `${route.title} – Karpeloggen`;
   if (route.mount) { view.innerHTML = ''; route.mount(view); } else view.innerHTML = route.html;
   document.querySelectorAll('.tabs a').forEach((a) => {
     if (a.dataset.route === key) a.setAttribute('aria-current', 'page');

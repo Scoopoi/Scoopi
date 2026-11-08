@@ -278,3 +278,78 @@ ul.hist { margin: 4px 0; padding-left: 18px; font-size: .85rem; }
 @media (prefers-color-scheme: dark) { .spark { color: var(--accent); } }
 .exif-note { background: var(--bg); border-radius: 10px; padding: 8px 12px; font-size: .9rem; margin: 0 0 12px; }
 .form select { display: block; width: 100%; margin-top: 4px; }
+
+/* ===== Tema: Spejlskæl (oliven og guld, med Scoopis egne billeder) ===== */
+:root {
+  --bg: #f4efe3; --card: #fffdf7; --text: #2a2a20; --muted: #6b6550; --line: #e5dcc6;
+  --brand: #2c3a27; --accent: #c9a24a; --mork: #1f2a1c; --guld: #c9a24a; --guld-lys: #e8cf86;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #12170f; --card: #1c2519; --text: #efe6cf; --muted: #a9a083; --line: #33402d; --brand: #c9a24a; --accent: #e8cf86; }
+}
+body { background: var(--bg); }
+.topbar {
+  gap: 10px; justify-content: flex-start;
+  background: linear-gradient(90deg, rgba(20,27,17,.92), rgba(20,27,17,.72)), url(../img/skael.jpg) center/cover;
+  color: #f3e2b0; border-bottom: 2px solid var(--guld);
+}
+.topbar .logo { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; }
+.topbar .titler { flex: 1; min-width: 0; }
+.topbar .brand { font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; color: var(--guld-lys); opacity: .9; }
+.topbar h1 { font-size: 1.15rem; line-height: 1.2; color: #fff6dc; }
+.net { background: var(--guld); color: var(--mork); }
+.tabs { background: var(--mork); border-top: 2px solid var(--guld); }
+.tabs a { color: #b9ad8a; }
+.tabs a[aria-current="page"] { color: var(--guld-lys) !important; }
+@media (min-width: 900px) { .tabs { border-top: 0; border-right: 2px solid var(--guld); padding-top: 84px; } }
+button, a.btn { background: var(--mork); color: #f6e7c1; }
+button.ghost { background: transparent; color: var(--brand); border-color: var(--brand); }
+button.on { background: var(--mork); color: var(--guld-lys); }
+@media (prefers-color-scheme: dark) {
+  button, a.btn { background: var(--guld); color: var(--mork); }
+  button.ghost { color: var(--guld-lys); border-color: var(--guld); }
+}
+.seg input:checked + span { background: var(--mork); color: var(--guld-lys); }
+@media (prefers-color-scheme: dark) { .seg input:checked + span { background: var(--guld); color: var(--mork); } }
+.card { box-shadow: 0 1px 2px rgba(60,50,20,.06); }
+.card h2 { color: var(--brand); }
+.bf { background: linear-gradient(90deg, var(--brand), var(--guld)); }
+.kpis b { color: var(--brand); }
+.file-btn span, .foto-btn span { border-color: var(--guld); color: var(--brand); }
+@media (prefers-color-scheme: dark) { .file-btn span, .foto-btn span { color: var(--guld-lys); } }
+.tag { background: #efe3bf; color: #4a3d1c; }
+@media (prefers-color-scheme: dark) { .tag { background: #3a3420; color: var(--guld-lys); } }
+/* Stort billede på forsiden */
+.hero {
+  position: relative; height: 210px; margin: -16px -16px 16px; overflow: hidden;
+  background: #1f2a1c url(../img/hero.jpg) center 40%/cover;
+  display: flex; align-items: flex-end;
+}
+.hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15,20,12,0) 35%, rgba(15,20,12,.85)); }
+.hero-txt { position: relative; z-index: 1; padding: 14px 18px; color: #fff6dc; width: 100%; }
+.hero-navn { font-size: 1.9rem; font-weight: 800; letter-spacing: .01em; text-shadow: 0 2px 8px rgba(0,0,0,.5); line-height: 1.1; }
+.hero-sub { font-size: .75rem; letter-spacing: .2em; text-transform: uppercase; color: var(--guld-lys); }
+.hero-tal { display: flex; gap: 14px; margin-top: 8px; font-size: .85rem; }
+.hero-tal span { background: rgba(0,0,0,.35); border: 1px solid rgba(232,207,134,.5); border-radius: 99px; padding: 2px 10px; }
+@media (min-width: 900px) { .hero { height: 280px; margin: 0 0 16px; border-radius: 14px; } }
+
+/* Hele baggrunden: zoomede skæl fra Scoopis egen fisk */
+body {
+  background:
+    linear-gradient(rgba(244,239,227,.80), rgba(244,239,227,.80)),
+    url(../img/skael-tile.jpg) 0 0 / 720px 360px repeat;
+  background-attachment: fixed;
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background:
+      linear-gradient(rgba(14,18,11,.84), rgba(14,18,11,.84)),
+      url(../img/skael-tile.jpg) 0 0 / 720px 360px repeat;
+    background-attachment: fixed;
+  }
+}
+.topbar {
+  background: linear-gradient(90deg, rgba(20,27,17,.86), rgba(20,27,17,.62)), url(../img/skael-tile.jpg) 0 0 / 540px 270px repeat;
+}
+.tabs { background: linear-gradient(rgba(20,27,17,.93), rgba(20,27,17,.93)), url(../img/skael-tile.jpg) 0 0 / 540px 270px repeat; }
+h3.sek { color: var(--brand); background: var(--card); display: inline-block; padding: 2px 10px; border-radius: 99px; }
