@@ -5,7 +5,7 @@ import { afstand } from './dji.js';
 
 const LEAFLET = './vendor/leaflet/'; // Leaflet 1.9.4 (BSD-2), ligger i repoet så kortet virker offline
 let leafletP;
-function hentLeaflet() {
+export function hentLeaflet() {
   if (window.L) return Promise.resolve(window.L);
   if (!leafletP) {
     leafletP = new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ export async function mount(el, gemte) {
 
   let L;
   try { L = await hentLeaflet(); } catch (e) { el.querySelector('#map-err').textContent = e.message; return; }
-  if (map) { map.remove(); map = null; }
+  if (map) { map.stop(); map.remove(); map = null; }
   map = L.map(el.querySelector('#map'), { zoomControl: true });
   const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 21, maxNativeZoom: 19, attribution: 'Luftfoto © Esri' });
   const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 21, maxNativeZoom: 19, attribution: '© OpenStreetMap' });
@@ -126,5 +126,5 @@ export async function mount(el, gemte) {
       .addTo(map).bindPopup(k.n > 1 ? `Gruppe på ca. ${k.n} karper` : k.cm ? `Karpe ca. ${k.cm} cm` : 'Karpe (ukendt størrelse)'));
   }
   const fg = L.featureGroup(grp);
-  map.fitBounds(fg.getBounds().pad(0.15), { maxZoom: 20 });
+  map.fitBounds(fg.getBounds().pad(0.15), { maxZoom: 20, animate: false });
 }
