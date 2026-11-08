@@ -200,3 +200,139 @@ export function findKarper(data, w, h, { len = 80, sens = 55, tone = 'lys', ingr
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) fuld[y * w + x] = mask[Math.min(H - 1, (y * f) | 0) * W + Math.min(W - 1, (x * f) | 0)];
   return { mask: fuld, vand: m, markers: fisk };
 }
+
+// ======================================================================
+// Kandidater + egenskaber (til den trænede model).
+// Finder både lyse og mørke aflange pletter og måler egenskaber ved hver,
+// så en lille model (trænet på Scoopis markerede droneoptagelser) kan afgøre,
+// om det er en karpe – eller sten, grøde, skygge, and osv.
+// ======================================================================
+export const EGENSKABER = ['styrke', 'mørk', 'længde', 'tværs', 'kant', 'uro', 'dR', 'dG', 'dB', 'mætning', 'lys', 'baggrund', 'skæv', 'dækning'];
+
+export function kandidater(data, w, h, { len = 60, maks = 400 } = {}) {
+  const n = w * h;
+  const f = Math.min(1, 40 / len);
+  const Lf = new Float32Array(n), Rf = new Float32Array(n), Gf = new Float32Array(n), Bf = new Float32Array(n), Vf = new Float32Array(n);
+  for (let i = 0, p = 0; i < n; i++, p += 4) {
+    const r = data[p], g = data[p + 1], b = data[p + 2];
+    Rf[i] = r; Gf[i] = g; Bf[i] = b;
+    Lf[i] = 0.299 * r + 0.587 * g + 0.114 * b;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), mæt = mx ? (mx - mn) / mx : 0;
+    const exg = (2 * g - r - b) / (r + g + b + 1);
+    // Kun tydelig landvegetation (kraftigt grøn) og hvide genskin/fugle tæller ikke som vand.
+    // Gulgrønt, lavt vand med bund og grøde SKAL med – dér står karperne tit.
+    Vf[i] = (exg > 0.18 && mæt > 0.35 && Lf[i] > 60) || Lf[i] > 225 ? 0 : 1;
+  }
+  const { d: Lr, W, H } = nedskaler(Lf, w, h, f);
+  const Rr = nedskaler(Rf, w, h, f).d, Gr = nedskaler(Gf, w, h, f).d, Br = nedskaler(Bf, w, h, f).d, Vr = nedskaler(Vf, w, h, f).d;
+  const N = W * H, ls = len * f;
+  const m = new Float32Array(N);
+  for (let i = 0; i < N; i++) m[i] = Vr[i] > 0.8 ? 1 : 0;
+  const Ls = vandSnit(Lr, m, W, H, Math.max(1, Math.round(ls / 14)));
+  const Lb = vandSnit(Ls, m, W, H, Math.max(4, Math.round(ls)));
+  const D2 = new Float32Array(N);
+  for (let i = 0; i < N; i++) D2[i] = m[i] ? (Ls[i] - Lb[i]) ** 2 : 0;
+  const lokalVar = vandSnit(D2, m, W, H, Math.max(4, Math.round(ls)));
+  const hp = [];
+  for (let i = 0; i < N; i += 2) if (m[i]) hp.push(Math.abs(Ls[i] - Lb[i]));
+  hp.sort((p, q) => p - q);
+  const sigma = Math.max(0.5, (hp[hp.length >> 1] || 1) * 1.4826);
+
+  const halv = ls * 0.4, side = Math.max(3, ls * 0.2), ind = side * 0.3;
+  const ok = (X, Y) => X >= 0 && Y >= 0 && X < W && Y < H && m[Y * W + X];
+  // Respons for én retning i ét punkt: {r (med fortegn: + lys, − mørk), c, a, b}
+  function respons(x, y, th) {
+    const dx = Math.cos(th), dy = Math.sin(th), nx = -dy, ny = dx;
+    let c = 0, a = 0, b = 0, ia = 0, ib = 0, nc = 0, na = 0, nb = 0, nia = 0, nib = 0, tot = 0;
+    for (let t = -halv; t <= halv; t += 2) {
+      tot++;
+      const X = x + t * dx, Y = y + t * dy;
+      let P = Math.round(X), Q = Math.round(Y); if (ok(P, Q)) { c += Ls[Q * W + P]; nc++; }
+      P = Math.round(X + ind * nx); Q = Math.round(Y + ind * ny); if (ok(P, Q)) { ia += Ls[Q * W + P]; nia++; }
+      P = Math.round(X - ind * nx); Q = Math.round(Y - ind * ny); if (ok(P, Q)) { ib += Ls[Q * W + P]; nib++; }
+      P = Math.round(X + side * nx); Q = Math.round(Y + side * ny); if (ok(P, Q)) { a += Ls[Q * W + P]; na++; }
+      P = Math.round(X - side * nx); Q = Math.round(Y - side * ny); if (ok(P, Q)) { b += Ls[Q * W + P]; nb++; }
+    }
+    if (nc < tot * 0.7 || nia < tot * 0.6 || nib < tot * 0.6 || (na < tot * 0.5 && nb < tot * 0.5)) return null;
+    const cm = c / nc, ci = [cm, ia / nia, ib / nib];
+    const A = na >= tot * 0.5 ? a / na : null, B = nb >= tot * 0.5 ? b / nb : null;
+    const sider = [A, B].filter((v) => v != null);
+    const lysR = Math.min(...ci) - Math.max(...sider); // hele kroppen lysere end begge sider
+    const mørkR = Math.min(...sider) - Math.max(...ci); // hele kroppen mørkere end begge sider
+    const r = lysR >= mørkR ? lysR : -mørkR;
+    return { r, c: cm, a: A, b: B, dækning: (na + nb) / (2 * tot) };
+  }
+  // 7 × 5 punkter langs og på tværs af fisken (lysstyrke minus baggrund, i σ), vendt så "fiskefarven" er positiv
+  function profil(x, y, th, sgn) {
+    const dx = Math.cos(th), dy = Math.sin(th), nx = -dy, ny = dx, bg = Lb[y * W + x], ud = [];
+    for (let a = -3; a <= 3; a++) for (let b = -2; b <= 2; b++) {
+      const P = Math.round(x + a * ls * 0.16 * dx + b * side * 0.6 * nx), Q = Math.round(y + a * ls * 0.16 * dy + b * side * 0.6 * ny);
+      ud.push(ok(P, Q) ? Math.max(-4, Math.min(4, ((Ls[Q * W + P] - bg) * sgn) / sigma)) : 0);
+    }
+    return ud;
+  }
+  // Responskort (bedste retning pr. punkt)
+  const R = new Float32Array(N), S = new Float32Array(N), V = new Float32Array(N);
+  const st = Math.max(1, Math.round(ls / 20)); // hvert 2. punkt ved normal størrelse – 4× hurtigere
+  for (let k = 0; k < 12; k++) {
+    const th = (k * Math.PI) / 12;
+    for (let y = 0; y < H; y += st) for (let x = 0; x < W; x += st) {
+      const i = y * W + x;
+      if (!m[i]) continue;
+      const rr = respons(x, y, th);
+      if (rr && Math.abs(rr.r) > R[i]) { R[i] = Math.abs(rr.r); S[i] = Math.sign(rr.r); V[i] = th; }
+    }
+  }
+  // Toppe (non-max suppression) med lav tærskel → mange kandidater, modellen sorterer
+  const T0 = 0.9 * sigma, rad = Math.max(2, Math.round(ls * 0.45));
+  const idx = [];
+  for (let i = 0; i < N; i++) if (R[i] > T0) idx.push(i);
+  idx.sort((p, q) => R[q] - R[p]);
+  const taget = new Uint8Array(N), ud = [];
+  for (const i of idx) {
+    if (taget[i] || ud.length >= maks) continue;
+    const x = i % W, y = (i / W) | 0, th = V[i], sgn = S[i];
+    for (let yy = Math.max(0, y - rad); yy <= Math.min(H - 1, y + rad); yy++) for (let xx = Math.max(0, x - rad); xx <= Math.min(W - 1, x + rad); xx++) if ((xx - x) ** 2 + (yy - y) ** 2 <= rad * rad) taget[yy * W + xx] = 1;
+    const r0 = respons(x, y, th), rp = respons(x, y, th + Math.PI / 2);
+    if (!r0) continue;
+    // Længde langs kroppen
+    const dx = Math.cos(th), dy = Math.sin(th);
+    const k0 = Math.abs(r0.r);
+    let lgd = 0;
+    for (const retn of [1, -1]) {
+      let t = 0, sidst = 0, huller = 0;
+      while (t < ls * 1.3) { t++; const q = respons(x + retn * t * dx * 0.5, y + retn * t * dy * 0.5, th); if (!q) break; if (q.r * sgn >= k0 * 0.25) { sidst = t * 0.5; huller = 0; } else if (++huller > 4) break; }
+      lgd += sidst;
+    }
+    // Farve: krop minus baggrund
+    const nx = -dy, ny = dx; let kr = 0, kg = 0, kb = 0, br = 0, bg = 0, bb = 0, nk = 0, nbg = 0;
+    for (let t = -halv; t <= halv; t += 2) {
+      let P = Math.round(x + t * dx), Q = Math.round(y + t * dy);
+      if (ok(P, Q)) { const j = Q * W + P; kr += Rr[j]; kg += Gr[j]; kb += Br[j]; nk++; }
+      for (const s of [side * 1.2, -side * 1.2]) { P = Math.round(x + t * dx + s * nx); Q = Math.round(y + t * dy + s * ny); if (ok(P, Q)) { const j = Q * W + P; br += Rr[j]; bg += Gr[j]; bb += Br[j]; nbg++; } }
+    }
+    kr /= nk || 1; kg /= nk || 1; kb /= nk || 1; br /= nbg || 1; bg /= nbg || 1; bb /= nbg || 1;
+    const kmx = Math.max(kr, kg, kb), kmn = Math.min(kr, kg, kb);
+    const kant = (() => { let d = 3; const rr = Math.round(ls * 1.2); for (let yy = Math.max(0, y - rr); yy <= Math.min(H - 1, y + rr); yy += 2) for (let xx = Math.max(0, x - rr); xx <= Math.min(W - 1, x + rr); xx += 2) if (!m[yy * W + xx]) d = Math.min(d, Math.hypot(xx - x, yy - y) / ls); return d; })();
+    const sk = r0.a != null && r0.b != null ? Math.abs(r0.a - r0.b) / (Math.abs(r0.c - r0.a) + Math.abs(r0.c - r0.b) + 1) : 1;
+    ud.push({
+      x: x / f, y: y / f, vinkel: th, lengthPx: Math.max(ls * 0.4, lgd + 2) / f, mørk: sgn < 0,
+      e: [
+        Math.min(8, k0 / sigma),                       // styrke
+        sgn < 0 ? 1 : 0,                               // mørk
+        Math.min(3, (lgd + 2) / ls),                   // længde (i karpelængder)
+        rp ? Math.max(-1, Math.min(1.5, (rp.r * sgn) / (k0 + 0.1))) : 0, // tværs: lige så kraftig på tværs = rund klat, ikke fisk
+        Math.min(3, kant),                             // afstand til land/vegetation
+        Math.min(5, Math.sqrt(lokalVar[i]) / sigma),   // uro i vandet omkring
+        (kr - br) / 255, (kg - bg) / 255, (kb - bb) / 255, // farveforskel krop − baggrund
+        kmx ? (kmx - kmn) / kmx : 0,                   // kroppens farvemætning
+        (0.299 * kr + 0.587 * kg + 0.114 * kb) / 255,  // kroppens lysstyrke
+        (0.299 * br + 0.587 * bg + 0.114 * bb) / 255,  // baggrundens lysstyrke
+        Math.min(1.5, sk),                             // skævhed mellem siderne
+        r0.dækning,                                    // hvor meget vand på siderne
+        ...profil(x, y, th, sgn),                      // lille udsnit drejet langs fisken (form: hoved, krop, hale)
+      ],
+    });
+  }
+  return { kandidater: ud, sigma, W, H, f };
+}
