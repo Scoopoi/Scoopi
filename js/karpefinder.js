@@ -45,7 +45,7 @@ function nedskaler(src, w, h, f) {
   return { d: ud, W, H };
 }
 
-export function findKarper(data, w, h, { len = 80, sens = 55, tone = 'lys', ingrode = true } = {}) {
+export function findKarper(data, w, h, { len = 80, sens = 55, tone = 'lys', ingrode = true, metode = 'toppe', afstand = 0.35, loftFaktor = 7, indFaktor = 0.3 } = {}) {
   const n = w * h;
   const L0 = new Float32Array(n), V0 = new Float32Array(n);
   for (let i = 0, p = 0; i < n; i++, p += 4) {
@@ -76,7 +76,7 @@ export function findKarper(data, w, h, { len = 80, sens = 55, tone = 'lys', ingr
   for (let k = 0; k < 12; k++) {
     const th = (k * Math.PI) / 12, dx = Math.cos(th), dy = Math.sin(th), nx = -dy, ny = dx;
     const pts = [];
-    const ind = side * 0.3; // linjer inde i kroppen: en karpe er lys i hele bredden, en kvist er tynd
+    const ind = side * indFaktor; // linjer inde i kroppen: en karpe er lys i hele bredden, en kvist er tynd
     for (let t = -halv; t <= halv; t += trin) pts.push([Math.round(t * dx), Math.round(t * dy), Math.round(t * dx + side * nx), Math.round(t * dy + side * ny), Math.round(t * dx - side * nx), Math.round(t * dy - side * ny),
       Math.round(t * dx + ind * nx), Math.round(t * dy + ind * ny), Math.round(t * dx - ind * nx), Math.round(t * dy - ind * ny)]);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -116,10 +116,60 @@ export function findKarper(data, w, h, { len = 80, sens = 55, tone = 'lys', ingr
   const T = (2.6 - (sens / 100) * 1.8) * sigma; // følsomhed 0 → 2,6σ … 100 → 0,8σ
   if (globalThis.KARPE_DEBUG) { const rv = []; for (let i = 0; i < N; i++) if (m[i] && R[i] > 0) rv.push(R[i]); rv.sort((p, q) => p - q); console.log('sigma', sigma.toFixed(2), 'T', T.toFixed(2), 'R p50/p90/p99/max', [0.5, 0.9, 0.99, 1].map((q) => rv[Math.min(rv.length - 1, (rv.length * q) | 0)]?.toFixed(2)).join('/')); }
   // Karper er svage skygger; meget lyse ting (kviste, blade, genskin) er for kraftige til at være fisk
-  const loft = 7 * sigma;
+  const loft = loftFaktor * sigma;
   const mask = new Uint8Array(N);
   for (let i = 0; i < N; i++) mask[i] = R[i] > T && R[i] < loft ? 1 : 0;
 
+  // Mål fiskens længde: gå langs kroppen fra midten, til den ikke længere er lysere end vandet ved siden af
+  function målLængde(x0, y0, th) {
+    const dx = Math.cos(th), dy = Math.sin(th), nx = -dy, ny = dx;
+    const v = (X, Y) => { X = Math.round(X); Y = Math.round(Y); return X >= 0 && Y >= 0 && X < W && Y < H && m[Y * W + X] ? Ls[Y * W + X] : null; };
+    const kontrast = (t) => {
+      const c = v(x0 + t * dx, y0 + t * dy), a = v(x0 + t * dx + side * nx, y0 + t * dy + side * ny), b = v(x0 + t * dx - side * nx, y0 + t * dy - side * ny);
+      if (c == null || (a == null && b == null)) return null;
+      const bg = a == null ? b : b == null ? a : (a + b) / 2;
+      return (c - bg) * tegn;
+    };
+    const k0 = Math.max(0.5, kontrast(0) ?? 0);
+    let ud = 0;
+    for (const retn of [1, -1]) {
+      let t = 0, sidst = 0, huller = 0;
+      while (t < ls * 1.2) {
+        t++;
+        const k = kontrast(retn * t);
+        if (k == null) break;
+        if (k >= k0 * 0.2) { sidst = t; huller = 0; } else if (++huller > 3) break; // små huller (finner, krusninger) er ok
+      }
+      ud += sidst;
+    }
+    return Math.max(ls * 0.5, Math.min(ls * 2.2, ud + 2));
+  }
+
+  if (metode === 'toppe') {
+    // Fisk i stime ligger klos op ad hinanden: tag hvert lokalt maksimum i responskortet (non-max suppression)
+    const r = Math.max(2, Math.round(ls * afstand));
+    const kand = [];
+    for (let i = 0; i < N; i++) if (mask[i]) kand.push(i);
+    kand.sort((p, q) => R[q] - R[p]);
+    const taget = new Uint8Array(N), fisk = [];
+    for (const i of kand) {
+      if (taget[i]) continue;
+      const x = i % W, y = (i / W) | 0;
+      // Afstand til bredden/bevoksning (i karpelængder) – fund helt inde ved kanten er oftere kviste
+      let kant = 99;
+      const rr = Math.round(ls * 0.8);
+      for (let yy = Math.max(0, y - rr); yy <= Math.min(H - 1, y + rr); yy += 2) for (let xx = Math.max(0, x - rr); xx <= Math.min(W - 1, x + rr); xx += 2) {
+        if (!Vr[yy * W + xx] || Vr[yy * W + xx] < 0.5) { const d = Math.hypot(xx - x, yy - y) / ls; if (d < kant) kant = d; }
+      }
+      fisk.push({ x: x / f, y: y / f, n: 1, area: 0, lengthPx: målLængde(x, y, V[i]) / f, vinkel: V[i], styrke: R[i] / T, kant });
+      for (let yy = Math.max(0, y - r); yy <= Math.min(H - 1, y + r); yy++) for (let xx = Math.max(0, x - r); xx <= Math.min(W - 1, x + r); xx++) {
+        if ((xx - x) ** 2 + (yy - y) ** 2 <= r * r) taget[yy * W + xx] = 1;
+      }
+    }
+    const fuld = new Uint8Array(n);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) fuld[y * w + x] = mask[Math.min(H - 1, (y * f) | 0) * W + Math.min(W - 1, (x * f) | 0)];
+    return { mask: fuld, vand: m, markers: fisk };
+  }
   // Pletter i responskortet = fisk. Placering = stærkeste punkt, retning fra skabelonen.
   const set = new Uint8Array(N), stak = new Int32Array(N), fisk = [];
   for (let s0 = 0; s0 < N; s0++) {

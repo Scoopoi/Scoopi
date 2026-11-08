@@ -52,6 +52,7 @@ export async function mount(el, gemte) {
     karper.push(m);
   }
   const ialt = karper.reduce((s, m) => s + m.n, 0);
+  const maaske = karper.filter((m) => m.status === 'maaske').reduce((s, m) => s + m.n, 0);
   const medCm = karper.filter((m) => m.cm != null);
 
   el.innerHTML = `
@@ -61,7 +62,7 @@ export async function mount(el, gemte) {
         <label class="filter">Dato <select id="dato"><option value="alle">Alle datoer</option>${datoer.map((d) => `<option value="${d}" ${d === valgtDato ? 'selected' : ''}>${datoTekst(d)}</option>`).join('')}</select></label>
       </div>
       <div class="kpis">
-        <div><b>${ialt}</b><span>karper (estimat)</span></div>
+        <div><b>${ialt}</b><span>karper${maaske ? ` (${maaske} måske)` : ' (estimat)'}</span></div>
         <div><b>${valgte.length}</b><span>billeder</span></div>
         <div><b>${medCm.length ? Math.round(medCm.reduce((s, m) => s + m.cm, 0) / medCm.length) : '–'}</b><span>gns. cm</span></div>
         <div><b>${medCm.length ? Math.max(...medCm.map((m) => m.cm)) : '–'}</b><span>største cm</span></div>
@@ -123,7 +124,7 @@ export async function mount(el, gemte) {
   for (const k of karper) {
     const r = k.cm ? Math.max(4, Math.min(12, k.cm / 8)) : 5;
     grp.push(L.circleMarker([k.lat, k.lon], { radius: r * Math.sqrt(k.n), color: '#000', weight: 1, fillColor: farve(k.cm), fillOpacity: 0.9 })
-      .addTo(map).bindPopup(k.n > 1 ? `Gruppe på ca. ${k.n} karper` : k.cm ? `Karpe ca. ${k.cm} cm` : 'Karpe (ukendt størrelse)'));
+      .addTo(map).bindPopup((k.status === 'maaske' ? 'Måske: ' : '') + (k.n > 1 ? `Gruppe på ca. ${k.n} karper` : k.cm ? `Karpe ca. ${k.cm} cm` : 'Karpe (ukendt størrelse)')));
   }
   const fg = L.featureGroup(grp);
   map.fitBounds(fg.getBounds().pad(0.15), { maxZoom: 20, animate: false });
