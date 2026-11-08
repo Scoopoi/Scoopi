@@ -265,7 +265,14 @@ export async function mount(view) {
     const igangNu = !form.end.value && (startNu || !!t?.igang);
     if (!form.gotFish.value && !igangNu) fejl.push('om du fik fisk');
 
-    const catches = form.gotFish.value === 'ja' ? [...list.children].map(lasFisk) : [];
+    // Behold det, formularen ikke viser (kort-markeringer, vejr, kendt fisk)
+    const catches = form.gotFish.value === 'ja' ? [...list.children].map(lasFisk).map((c) => {
+      const gl = t?.catches.find((o) => o.id === c.id);
+      if (!gl) return c;
+      const ny = { ...gl, ...c };
+      if (gl.time !== c.time || (c.date && gl.date !== c.date)) ny.weather = null; // nyt tidspunkt → nyt vejr
+      return ny;
+    }) : [];
     if (form.gotFish.value === 'ja' && !catches.length) fejl.push('mindst én fisk (eller vælg "Nej")');
     if (catches.some((c) => !c.species)) fejl.push('art på hver fisk');
 

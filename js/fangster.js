@@ -3,13 +3,14 @@ import * as db from './db.js';
 import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER, gyldigTid, UKENDT_DATO } from './util.js';
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
-import { retTur, vejrTekst } from './ture.js';
+import { vejrTekst } from './ture.js';
 import { afstand } from './dji.js';
 import { kortVaelger, visFangstKort } from './kortvaelger.js';
 import { visSammeFisk, kandidater } from './kendte.js';
 
 
 let artFilter = 'alle';
+let retter = null; // { tid, cid } når en fangst rettes
 
 // Nærmeste sted, du har fisket før (inden for 1,5 km)
 function nærmesteSted(posPrSted, p) {
@@ -39,6 +40,10 @@ export async function mount(view) {
   const igang = trips.filter((x) => x.igang && !x.end).sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start))[0];
   const sidst = igang || [...trips].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))[0];
   let pos = null;
+  // Ret en gemt fangst?
+  const rT = retter && trips.find((x) => x.id === retter.tid);
+  const rC = rT?.catches.find((x) => x.id === retter.cid);
+  if (!rC) retter = null;
 
   const fisk = trips.flatMap((t) => t.catches.map((c) => ({ c, t })))
     .sort((a, b) => (((b.c.date || b.t.date) + (b.c.time || b.t.start)).localeCompare((a.c.date || a.t.date) + (a.c.time || a.t.start))));
@@ -48,8 +53,9 @@ export async function mount(view) {
 
   view.innerHTML = `
     <form class="card form" id="catch-form" novalidate>
-      <h2>Ny fangst</h2>
-      ${igang ? `<p class="igang-note">🟢 Igangværende tur: <b>${esc(igang.place)}</b> fra ${ugedag(igang.date)} kl. ${igang.start}</p>` : ''}
+      <h2>${rC ? '✏️ Ret fangst' : 'Ny fangst'}</h2>
+      ${rC ? `<p class="igang-note">Du retter <b>${esc(rC.carpType || rC.species)}${rC.weightKg != null ? ` ${String(rC.weightKg).replace('.', ',')} kg` : ''}</b> fra ${esc(rT.place)}.</p>` : ''}
+      ${igang && !rC ? `<p class="igang-note">🟢 Igangværende tur: <b>${esc(igang.place)}</b> fra ${ugedag(igang.date)} kl. ${igang.start}</p>` : ''}
       <label class="check"><input type="checkbox" id="gammel"> 📅 Gammel fangst – jeg kender kun ca. tidspunktet</label>
       <div class="row" id="praecis">
         <label>Dato <input type="date" name="date" value="${today()}"></label>
@@ -82,7 +88,7 @@ export async function mount(view) {
       <label>Note (valgfri) <textarea name="note" rows="2" placeholder="Fx plads, dybde, hvordan den tog"></textarea></label>
       <p class="muted small" id="tur-txt"></p>
       <p class="error" id="err" hidden></p>
-      <div class="actions"><button type="submit">Gem fangst</button></div>
+      <div class="actions">${rC ? '<button type="button" class="ghost" id="annuller">Annullér</button><button type="submit">Gem ændringer</button>' : '<button type="submit">Gem fangst</button>'}</div>
       ${datalister(trips)}
     </form>
 
@@ -103,7 +109,7 @@ export async function mount(view) {
               <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>🖼️ ${c.photoIds?.length ? 'Tilføj flere billeder' : 'Tilføj billeder'}</span></label>
               ${c.plads || c.spot ? `<button type="button" class="ghost sm" data-kort="${t.id}|${c.id}">🗺️ Kort</button>` : ''}
               <button type="button" class="ghost sm" data-samme="${c.id}">🔍 Samme fisk?</button>
-              <button type="button" class="ghost sm" data-ret="${t.id}">Ret</button>
+              <button type="button" class="ghost sm" data-ret="${t.id}|${c.id}">✏️ Ret</button>
               <button type="button" class="ghost sm danger" data-slet="${t.id}|${c.id}">Slet</button>
             </div>
           </div>
@@ -111,17 +117,38 @@ export async function mount(view) {
     </section>`;
 
   const form = view.querySelector('#catch-form');
-  const fel = fiskElement({}, { fjernbar: false, titel: 'Fisken' });
+  const fel = fiskElement(rC || {}, { fjernbar: false, titel: 'Fisken' });
   fel.querySelector('.tidrow').remove(); // tidspunkt står øverst
   view.querySelector('#fisk-her').append(fel);
-  if (igang?.stænger?.length) fel._sætStænger(igang.stænger); // vælg stang på den igangværende tur
+  const stængerHer = rC ? rT.stænger : igang?.stænger;
+  if (stængerHer?.length) fel._sætStænger(stængerHer); // vælg stang på turen
+  if (rC) {
+    // Udfyld formularen med den gemte fangst
+    form.place.value = rT.place;
+    const wt = form.querySelector(`input[name=waterType][value="${rT.waterType}"]`); if (wt) wt.checked = true;
+    form.note.value = rT.note || '';
+    if (rT.cirka) {
+      form.querySelector('#gammel').checked = true;
+      form.querySelector('#praecis').hidden = true; form.querySelector('#cirka').hidden = false;
+      const d = rC.date || rT.date;
+      form.cAar.value = rT.cirka === 'ukendt' ? '' : d.slice(0, 4);
+      form.cMaaned.value = rT.cirka === 'maaned' ? d.slice(5, 7) : '';
+    } else {
+      form.date.value = rC.date || rT.date;
+      form.time.value = rC.time || rT.start || '';
+    }
+    pos = rC.plads || (rT.lat != null ? { lat: rT.lat, lon: rT.lon } : null);
+    form.querySelector('#annuller').onclick = () => { retter = null; mount(view); };
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   // Position
   const gpsTxt = form.querySelector('#gps-txt');
   const visPos = () => { gpsTxt.textContent = pos ? `Position gemt (${pos.lat.toFixed(4)}, ${pos.lon.toFixed(4)})` : 'Bruges til vejret.'; };
   const stedPos = () => { const p = posPrSted[form.place.value.trim()]; if (p) { pos = p; visPos(); } };
   form.place.addEventListener('change', stedPos);
-  stedPos(); visPos();
+  if (!pos) stedPos();
+  visPos();
   form.querySelector('#gps').onclick = () => {
     if (!navigator.geolocation) { gpsTxt.textContent = 'Din browser kan ikke give position.'; return; }
     gpsTxt.textContent = 'Finder position …';
@@ -155,6 +182,7 @@ export async function mount(view) {
     const c0 = kortCenter();
     kv = await kortVaelger(form.querySelector('#kv'), {
       center: c0 ? { ...c0, zoom: 17 } : null,
+      plads: rC?.plads || null, spot: rC?.spot || null,
       onChange: (v) => { if (v.plads && !pos) { pos = v.plads; visPos(); } },
     });
   });
@@ -182,6 +210,7 @@ export async function mount(view) {
 
   // Vis om fangsten kommer på en eksisterende tur
   const turTxt = () => {
+    if (rC) { form.querySelector('#tur-txt').textContent = ''; return; }
     if (erGammel()) {
       form.querySelector('#tur-txt').textContent = form.cAar.value
         ? 'Gemmes som gammel fangst med cirka-dato (uden vejr og timer). Felter, du ikke kan huske, kan bare stå tomme.'
@@ -217,6 +246,7 @@ export async function mount(view) {
     if (!pos && kvData.plads) pos = kvData.plads;
     const noteTxt = form.note.value.trim();
     const now = new Date().toISOString();
+    if (rC) { await gemRettelse(c, kv ? kvData : null, noteTxt, form, erGammel(), pos); retter = null; await ryddeFotos(); await mount(view); toast('Ændringerne er gemt ✓'); return; }
     const tur = erGammel() ? null : findTur(await db.getAll('trips'), form.place.value, form.date.value, form.time.value);
     if (tur) {
       tur.catches.push(c);
@@ -249,7 +279,7 @@ export async function mount(view) {
       d.onclick = () => visGalleri(ids);
     }
   });
-  view.querySelectorAll('[data-ret]').forEach((b) => b.onclick = () => retTur(b.dataset.ret));
+  view.querySelectorAll('[data-ret]').forEach((b) => b.onclick = () => { const [tid, cid] = b.dataset.ret.split('|'); retter = { tid, cid }; mount(view); });
   view.querySelectorAll('[data-kort]').forEach((b) => b.onclick = () => {
     const [tid, cid] = b.dataset.kort.split('|');
     const t = trips.find((x) => x.id === tid); const c = t.catches.find((x) => x.id === cid);
@@ -274,4 +304,58 @@ export async function mount(view) {
     await mount(view);
     toast('Fangsten er slettet');
   });
+}
+
+// Gem en rettet fangst. Bliver på sin tur, hvis den stadig passer; ellers flyttes den.
+async function gemRettelse(c, kvData, noteTxt, form, gammel, pos) {
+  const now = new Date().toISOString();
+  const T = await db.get('trips', retter.tid);
+  const gl = T.catches.find((x) => x.id === retter.cid);
+  const ny = { ...gl, ...c };
+  if (kvData) { ny.plads = kvData.plads || null; ny.spot = kvData.spot || null; }
+  const p = ny.plads || pos;
+  const sted = form.place.value.trim();
+  const mdr = form.cAar.value ? form.cMaaned.value : '';
+  const cirka = gammel ? (!form.cAar.value ? 'ukendt' : mdr ? 'maaned' : 'aar') : null;
+  // Nyt tidspunkt eller nyt sted → hent vejret igen
+  const sammePos = (a, b) => (!a && !b) || (a && b && a.lat === b.lat && a.lon === b.lon);
+  if (gl.date !== ny.date || gl.time !== ny.time || !sammePos(gl.spot, ny.spot) || !sammePos(gl.plads, ny.plads)) ny.weather = null;
+  const alene = T.catches.length === 1 && !T.igang;
+  const passer = T.place.trim().toLowerCase() === sted.toLowerCase()
+    && (gammel ? !!T.cirka : !T.cirka && iTur(T, ny.date, ny.time));
+  if (passer || alene) {
+    T.catches = T.catches.map((x) => (x.id === ny.id ? ny : x));
+    T.note = noteTxt;
+    if (alene) {
+      T.place = sted; T.waterType = form.waterType.value;
+      if (gammel) { T.date = ny.date; T.start = '12:00'; T.cirka = cirka; T.end = null; T.endDate = null; T.weather = null; }
+      else {
+        delete T.cirka;
+        if (!passer) { T.date = ny.date; T.start = ny.time; T.end = null; T.endDate = null; T.weather = null; }
+      }
+      if (p && (T.lat !== p.lat || T.lon !== p.lon)) { T.lat = p.lat; T.lon = p.lon; T.weather = null; }
+    } else if (T.lat == null && p) { T.lat = p.lat; T.lon = p.lon; }
+    T.updatedAt = now;
+    await db.put('trips', T);
+    return;
+  }
+  // Flyt fangsten til en anden tur (eller en ny)
+  T.catches = T.catches.filter((x) => x.id !== ny.id);
+  T.updatedAt = now;
+  await db.put('trips', T);
+  const tur = gammel ? null : findTur(await db.getAll('trips'), sted, ny.date, ny.time);
+  if (tur) {
+    tur.catches.push(ny);
+    if (noteTxt && noteTxt !== T.note) tur.note = [tur.note, noteTxt].filter(Boolean).join('\n');
+    if (tur.lat == null && p) { tur.lat = p.lat; tur.lon = p.lon; }
+    tur.updatedAt = now;
+    await db.put('trips', tur);
+  } else {
+    await db.put('trips', {
+      id: uid(), date: ny.date, waterType: form.waterType.value, place: sted,
+      start: gammel ? '12:00' : ny.time, end: null, catches: [ny], note: noteTxt,
+      ...(gammel ? { cirka } : {}),
+      lat: p?.lat ?? null, lon: p?.lon ?? null, weather: null, createdAt: now, updatedAt: now,
+    });
+  }
 }
