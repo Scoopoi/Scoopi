@@ -1,4 +1,4 @@
-// "Fangster": skriv hurtigt én fangst ind, og se alle dine fisk samlet.
+// "Gamle fangster": skriv hurtigt én fangst ind, og se alle dine fisk samlet.
 import * as db from './db.js';
 import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER, gyldigTid } from './util.js';
 import { hentManglende } from './vejr.js';
@@ -33,7 +33,7 @@ function findTur(trips, place, date, time) {
 export async function mount(view) {
   // Øverst: skift mellem fangster og album
   const top = `<div class="seg subtabs">
-      <label><input type="radio" name="fvis" value="fangst" ${visning === 'fangst' ? 'checked' : ''}><span>🐟 Fangster</span></label>
+      <label><input type="radio" name="fvis" value="fangst" ${visning === 'fangst' ? 'checked' : ''}><span>🐟 Gamle fangster</span></label>
       <label><input type="radio" name="fvis" value="album" ${visning === 'album' ? 'checked' : ''}><span>🖼️ Album</span></label>
     </div>`;
   const bindTop = () => view.querySelectorAll('input[name=fvis]').forEach((r) => r.onchange = () => { visning = r.value; mount(view); });

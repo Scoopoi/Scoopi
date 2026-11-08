@@ -418,3 +418,6 @@ ul.par > li { border-top: 1px solid var(--line); padding: 10px 0; }
 .pf-img img { width: 100%; height: 100%; object-fit: cover; }
 .pf-img .antal { position: absolute; right: 4px; bottom: 4px; background: rgba(0,0,0,.65); color: #fff; font-size: .7rem; padding: 0 6px; border-radius: 99px; }
 #scan-knap { width: 100%; margin: 6px 0; }
+
+/* Lange fanenavne (fx "Gamle fangster") må gå over to linjer */
+.tabs a { white-space: normal; text-align: center; line-height: 1.1; }
