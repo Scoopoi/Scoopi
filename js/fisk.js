@@ -81,20 +81,40 @@ export function delArt(tekst) {
   return { species: erKarpe(v) ? 'Karpe' : v, carpType: '' };
 }
 export const opts = (arr) => arr.map((a) => `<option value="${esc(a)}">`).join('');
-export const uniq = (arr) => [...new Set(arr.filter(Boolean))];
+// Unikke værdier (store/små bogstaver tæller ens; den første stavemåde vinder)
+export const uniq = (arr) => {
+  const set = new Map();
+  for (const a of arr) { const v = String(a || '').trim(); if (v && !set.has(v.toLowerCase())) set.set(v.toLowerCase(), v); }
+  return [...set.values()];
+};
 
 // Datalister med forslag (standardlister + det, du selv har skrevet før).
 export function datalister(trips) {
   lærAgn(trips);
   const alle = trips.flatMap((t) => t.catches);
+  // Agn, smag og farve fra både fisk og stænger
+  const agnRækker = [...alle, ...trips.flatMap((t) => (t.stænger || []).map((r) => ({ bait: r.agn, flavour: r.smag, colour: r.farve })))];
   return `
     <datalist id="steder">${opts(uniq([...trips.map((t) => t.place), ...STANDARDSTEDER]))}</datalist>
     <datalist id="arter">${opts(uniq([...KARPETYPER.map(typeNavn), 'Karpe', ...ARTER, ...alle.map((c) => c.species)]))}</datalist>
-    <datalist id="agn">${opts(uniq([...AGN, ...alle.map((c) => c.bait)]))}</datalist>
-    <datalist id="smag">${opts(uniq([...SMAG, ...alle.map((c) => c.flavour)]))}</datalist>
-    <datalist id="farver">${opts(uniq([...FARVER, ...alle.map((c) => c.colour)]))}</datalist>
+    <datalist id="agn">${opts(uniq([...AGN, ...agnRækker.map((c) => c.bait)]))}</datalist>
+    <datalist id="smag">${opts(uniq([...SMAG, ...agnRækker.map((c) => c.flavour)]))}</datalist>
+    <datalist id="farver">${opts(uniq([...FARVER, ...agnRækker.map((c) => c.colour)]))}</datalist>
     <datalist id="venner">${opts(uniq(alle.map((c) => c.caughtBy)))}</datalist>`;
 }
+
+// Nyt ord (fx en ny agn eller smag) kommer straks med i listen, så det kan vælges i de andre felter.
+// Når turen/fangsten er gemt, ligger det i listen fremover (listerne bygges ud fra gemte ture).
+document.addEventListener('change', (e) => {
+  const felt = e.target;
+  const liste = felt?.list;
+  const v = felt?.value?.trim();
+  if (!liste || !v || liste.tagName !== 'DATALIST') return;
+  if ([...liste.options].some((o) => o.value.toLowerCase() === v.toLowerCase())) return;
+  const o = document.createElement('option');
+  o.value = v;
+  liste.append(o);
+});
 
 let tæller = 0;
 
