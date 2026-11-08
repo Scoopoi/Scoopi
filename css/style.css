@@ -383,3 +383,6 @@ ul.medl > li { display: flex; justify-content: space-between; gap: 8px; padding:
 ul.medl > li:first-child { border-top: 0; }
 .kode { margin-top: 4px; font-size: .9rem; }
 .card h4 { margin: 12px 0 4px; font-size: .9rem; color: var(--muted); }
+
+.foto-knapper { display: flex; flex-wrap: wrap; gap: 8px; }
+.foto-knapper .foto-btn { display: inline-block; }

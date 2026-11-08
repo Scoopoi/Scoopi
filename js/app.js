@@ -6,7 +6,7 @@ import * as drone from './drone.js';
 import * as kort from './kort.js';
 import * as adgang from './adgang.js';
 
-const VERSION = '0.17.0';
+const VERSION = '0.17.1';
 
 const routes = {
   fangster: {

@@ -101,7 +101,10 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
     </div>
     <div class="fotos"></div>
     <div class="exif-fisk" hidden></div>
-    <label class="foto-btn"><input type="file" accept="image/*" multiple><span>📷 Tilføj billede</span></label>`;
+    <div class="foto-knapper">
+      <label class="foto-btn"><input type="file" accept="image/*" multiple><span>🖼️ Vælg fra galleri</span></label>
+      <label class="foto-btn"><input type="file" accept="image/*" capture="environment"><span>📷 Tag billede</span></label>
+    </div>`;
   el.dataset.id = c.id || uid();
   el._dato = c.date || null;
   el._fotoIds = [...(c.photoIds || [])];
@@ -128,7 +131,7 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
     el.querySelector('.friend').hidden = !ven;
     if (ven) el.querySelector('[name=friend]').focus();
   }));
-  el.querySelector('.foto-btn input').onchange = async (e) => {
+  const vælgFotos = async (e) => {
     for (const f of e.target.files) {
       try {
         const exif = await lasExif(f);
@@ -140,6 +143,7 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
     e.target.value = '';
     visFotos(el);
   };
+  el.querySelectorAll('.foto-btn input').forEach((inp) => { inp.onchange = vælgFotos; });
   visFotos(el);
   return el;
 }
