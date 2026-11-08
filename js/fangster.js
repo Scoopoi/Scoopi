@@ -98,7 +98,7 @@ export async function mount(view) {
             ${c.fishId && kendte[c.fishId] ? `<div class="small kendt">🏷️ <b>${esc(kendte[c.fishId])}</b> · fanget ${antalPrFisk[c.fishId]} gange</div>` : ''}
             <div class="muted small">${esc(t.place)} · ${fangstDato(c, t)}</div>
             <div class="row-btns">
-              <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>📷 Tilføj billeder</span></label>
+              <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>🖼️ Tilføj billeder</span></label>
               ${c.plads || c.spot ? `<button type="button" class="ghost sm" data-kort="${t.id}|${c.id}">🗺️ Kort</button>` : ''}
               <button type="button" class="ghost sm" data-samme="${c.id}">🔍 Samme fisk?</button>
               <button type="button" class="ghost sm" data-ret="${t.id}">Ret</button>
