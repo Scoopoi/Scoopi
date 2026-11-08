@@ -5,6 +5,7 @@ import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
 import { retTur } from './ture.js';
 import { afstand } from './dji.js';
+import { kortVaelger, visFangstKort } from './kortvaelger.js';
 import { visSammeFisk, kandidater } from './kendte.js';
 
 let artFilter = 'alle';
@@ -72,6 +73,10 @@ export async function mount(view) {
         <button type="button" class="ghost sm" id="gps">📍 Brug min position</button>
         <span class="muted small" id="gps-txt"></span>
       </div>
+      <details class="kv-boks" id="kv-boks">
+        <summary>🗺️ Marker din plads og hvor fisken tog</summary>
+        <div id="kv"></div>
+      </details>
       <div id="fisk-her"></div>
       <label>Note (valgfri) <textarea name="note" rows="2" placeholder="Fx plads, dybde, hvordan den tog"></textarea></label>
       <p class="muted small" id="tur-txt"></p>
@@ -94,6 +99,7 @@ export async function mount(view) {
             <div class="muted small">${esc(t.place)} · ${fangstDato(c, t)}</div>
             <div class="row-btns">
               <label class="foto-senere"><input type="file" accept="image/*" multiple data-tur="${t.id}" data-fisk="${c.id}"><span>📷 Tilføj billeder</span></label>
+              ${c.plads || c.spot ? `<button type="button" class="ghost sm" data-kort="${t.id}|${c.id}">🗺️ Kort</button>` : ''}
               <button type="button" class="ghost sm" data-samme="${c.id}">🔍 Samme fisk?</button>
               <button type="button" class="ghost sm" data-ret="${t.id}">Ret</button>
               <button type="button" class="ghost sm danger" data-slet="${t.id}|${c.id}">Slet</button>
@@ -131,6 +137,24 @@ export async function mount(view) {
     if (erGammel() && !igang) form.place.value = form.place.value || '';
     turTxt();
   };
+  // Kort over søen (åbnes først, når man trykker – sparer data)
+  let kv = null;
+  const sidstePlads = (sted) => {
+    const f = trips.filter((t) => t.place === sted).flatMap((t) => t.catches.map((c) => ({ c, t }))).filter((x) => x.c.plads)
+      .sort((a, b) => ((b.c.date || b.t.date) + (b.c.time || '')).localeCompare((a.c.date || a.t.date) + (a.c.time || '')))[0];
+    return f?.c.plads || null;
+  };
+  const kortCenter = () => pos || sidstePlads(form.place.value.trim()) || posPrSted[form.place.value.trim()] || null;
+  form.querySelector('#kv-boks').addEventListener('toggle', async (e) => {
+    if (!e.target.open || kv) return;
+    const c0 = kortCenter();
+    kv = await kortVaelger(form.querySelector('#kv'), {
+      center: c0 ? { ...c0, zoom: 17 } : null,
+      onChange: (v) => { if (v.plads && !pos) { pos = v.plads; visPos(); } },
+    });
+  });
+  form.place.addEventListener('change', () => { const c0 = kortCenter(); if (kv && c0) kv.flyt(c0); });
+
   // "Brug billedets data": tidspunkt, position og stedets navn (nærmeste sted, du har fisket før)
   fel.addEventListener('brugexif', (e) => {
     const x = e.detail;
@@ -142,6 +166,7 @@ export async function mount(view) {
     }
     if (x.lat != null) {
       pos = { lat: x.lat, lon: x.lon }; visPos();
+      kv?.flyt(pos);
       const nær = nærmesteSted(posPrSted, pos);
       if (nær) { form.place.value = nær; dele.push(`sted (${nær})`); }
       else dele.push('position');
@@ -176,6 +201,10 @@ export async function mount(view) {
     c.date = erGammel() ? cirkaDato : form.date.value;
     await gemFotos(fel);
     c.photoIds = [...fel._fotoIds];
+    const kvData = kv?.hent() || {};
+    if (kvData.plads) c.plads = kvData.plads;
+    if (kvData.spot) c.spot = kvData.spot;
+    if (!pos && kvData.plads) pos = kvData.plads;
     const noteTxt = form.note.value.trim();
     const now = new Date().toISOString();
     const tur = erGammel() ? null : findTur(await db.getAll('trips'), form.place.value, form.date.value, form.time.value);
@@ -211,6 +240,11 @@ export async function mount(view) {
     }
   });
   view.querySelectorAll('[data-ret]').forEach((b) => b.onclick = () => retTur(b.dataset.ret));
+  view.querySelectorAll('[data-kort]').forEach((b) => b.onclick = () => {
+    const [tid, cid] = b.dataset.kort.split('|');
+    const t = trips.find((x) => x.id === tid); const c = t.catches.find((x) => x.id === cid);
+    visFangstKort(c, `${c.carpType || c.species}${c.weightKg ? ' ' + c.weightKg.toLocaleString('da-DK') + ' kg' : ''} · ${t.place}`);
+  });
   view.querySelectorAll('[data-samme]').forEach((b) => b.onclick = () => visSammeFisk(b.dataset.samme, () => mount(view)));
   view.querySelectorAll('.foto-senere input').forEach((inp) => inp.onchange = async () => {
     if (!inp.files.length) return;

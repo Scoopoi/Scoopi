@@ -3,8 +3,9 @@ import * as ture from './ture.js';
 import * as fangster from './fangster.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
+import * as kort from './kort.js';
 
-const VERSION = '0.14.0';
+const VERSION = '0.15.0';
 
 const routes = {
   fangster: {
@@ -33,7 +34,7 @@ const routes = {
   },
   kort: {
     title: 'Kort',
-    html: soon('Kort', 'Søer, pladser, fangster og spots på et kort.', ['Leaflet + OpenStreetMap']),
+    mount: kort.mount,
   },
   indstillinger: {
     title: 'Opsætning',
