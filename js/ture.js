@@ -119,9 +119,10 @@ export async function mount(view) {
   const wrap = form.querySelector('#fish-wrap');
 
   // ---- Stænger ----
-  // Ny tur: start med stængerne fra din seneste tur (helst samme sted), så du kun retter det, der er anderledes.
+  // Ny tur: start med 1 stang (med agn fra første stang på din seneste tur, helst samme sted). Flere tilføjes med +.
   const forrige = t ? null : (trips.find((x) => x.stænger?.length && x.place === form.place.value.trim()) || trips.find((x) => x.stænger?.length));
-  let stænger = (t ? t.stænger : forrige?.stænger)?.map((r) => ({ ...r, _kopi: !t })) || [{}, {}];
+  let stænger = t ? (t.stænger?.length ? t.stænger.map((r) => ({ ...r })) : [{}])
+    : [forrige?.stænger?.[0] ? { ...forrige.stænger[0], _kopi: true } : {}];
   const stangListe = form.querySelector('#stang-liste');
   const læsStænger = () => [...stangListe.children].map((d) => ({
     agn: d.querySelector('[name=sagn]').value.trim(),
