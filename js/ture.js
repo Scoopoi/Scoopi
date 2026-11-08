@@ -181,6 +181,15 @@ export async function mount(view) {
   opdaterDage();
 
   form.addEventListener('input', () => { form.querySelector('#err').hidden = true; });
+  // "Brug billedets data" på en fisk: sæt turens start og position, hvis de mangler
+  form.addEventListener('brugexif', (e) => {
+    const x = e.detail;
+    const dele = ['fiskens tidspunkt'];
+    if (x.date && !form.start.value) { form.date.value = x.date; form.start.value = x.time; autoSlut(); showDur(); dele.push('turens start'); }
+    if (x.lat != null && !pos) { pos = { lat: x.lat, lon: x.lon }; visPos(); dele.push('position'); }
+    opdaterDage();
+    toast(`Udfyldt fra billedet: ${dele.join(', ')}`);
+  });
   form.querySelector('#cancel')?.addEventListener('click', () => { editing = null; mount(view); });
 
   form.querySelector('#start-nu')?.addEventListener('click', () => {

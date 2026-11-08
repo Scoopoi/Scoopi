@@ -4,9 +4,20 @@ import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugeda
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
 import { retTur } from './ture.js';
+import { afstand } from './dji.js';
 import { visSammeFisk, kandidater } from './kendte.js';
 
 let artFilter = 'alle';
+
+// Nærmeste sted, du har fisket før (inden for 1,5 km)
+function nærmesteSted(posPrSted, p) {
+  let bedst = null, min = 1500;
+  for (const [navn, q] of Object.entries(posPrSted)) {
+    const d = afstand(p, q);
+    if (d < min) { min = d; bedst = navn; }
+  }
+  return bedst;
+}
 
 // Finder en tur samme sted, som fangstens dato og klokkeslæt ligger inden for (også over midnat og flere døgn).
 function findTur(trips, place, date, time) {
@@ -50,7 +61,7 @@ export async function mount(view) {
           <select name="cAar">${Array.from({ length: new Date().getFullYear() - 1969 }, (_, i) => new Date().getFullYear() - i).map((y) => `<option>${y}</option>`).join('')}</select>
         </label>
       </div>
-      <p class="exif-note" id="exif" hidden></p>
+      
       <label>Sted
         <input type="text" name="place" list="steder" placeholder="Fx Vallensbæk Sø" value="${esc(sidst?.place || '')}" autocomplete="off">
       </label>
@@ -120,18 +131,23 @@ export async function mount(view) {
     if (erGammel() && !igang) form.place.value = form.place.value || '';
     turTxt();
   };
-  // Billedets egen dato (EXIF) foreslås
-  fel.addEventListener('exifdato', (e) => {
-    const { date, time } = e.detail;
-    if (date === form.date.value && !erGammel()) return;
-    const box = form.querySelector('#exif');
-    box.innerHTML = `📷 Billedet er taget <b>${datoTekst(date)} kl. ${time}</b>. <button type="button" class="ghost sm" id="brug-exif">Brug den dato</button>`;
-    box.hidden = false;
-    box.querySelector('#brug-exif').onclick = () => {
+  // "Brug billedets data": tidspunkt, position og stedets navn (nærmeste sted, du har fisket før)
+  fel.addEventListener('brugexif', (e) => {
+    const x = e.detail;
+    const dele = [];
+    if (x.date) {
       gammel.checked = false; gammel.onchange();
-      form.date.value = date; form.time.value = time;
-      box.hidden = true; turTxt();
-    };
+      form.date.value = x.date; form.time.value = x.time;
+      dele.push('tidspunkt');
+    }
+    if (x.lat != null) {
+      pos = { lat: x.lat, lon: x.lon }; visPos();
+      const nær = nærmesteSted(posPrSted, pos);
+      if (nær) { form.place.value = nær; dele.push(`sted (${nær})`); }
+      else dele.push('position');
+    }
+    turTxt();
+    toast(`Udfyldt fra billedet: ${dele.join(', ')}`);
   });
 
   // Vis om fangsten kommer på en eksisterende tur
