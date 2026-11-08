@@ -34,9 +34,9 @@ export const gemtProfil = () => { try { return JSON.parse(localStorage.getItem(G
 
 // Status: { tilstand: 'ude' | 'mangler-profil' | 'afventer' | 'godkendt' | 'afvist', profil, offline }
 export async function status() {
+  try { if (!(await databaseKlar())) return { tilstand: 'ikke-klar' }; } catch { return offlineStatus(); }
   let sb;
   try { sb = await klient(); } catch { return offlineStatus(); }
-  try { if (!(await databaseKlar())) return { tilstand: 'ikke-klar' }; } catch { return offlineStatus(); }
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { gemProfil(null); return { tilstand: 'ude' }; }
   const { data, error } = await sb.from('profiler').select('*').eq('id', session.user.id).maybeSingle();
@@ -48,14 +48,19 @@ export async function status() {
 }
 // Er databasen sat op (01-brugere.sql kørt i Supabase)? Indtil da kører appen uden login, så ingen låses ude.
 let klar = null;
+const KLAR = 'karpeloggen-db-klar';
 async function databaseKlar() {
   if (klar !== null) return klar;
+  const husk = (v) => { try { localStorage.setItem(KLAR, v ? '1' : '0'); } catch {} return (klar = v); };
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/profiler?select=id&limit=1`, { headers: { apikey: SUPABASE_KEY } });
-    if (r.ok) return (klar = true);
+    if (r.ok) return husk(true);
     const j = await r.json().catch(() => ({}));
-    if (j.code === 'PGRST205' || j.code === '42P01') return (klar = false);
+    if (j.code === 'PGRST205' || j.code === '42P01') return husk(false);
   } catch { /* offline */ }
+  // Offline: brug det, vi vidste sidst. Var databasen ikke sat op, kører appen uden login som før.
+  let sidst = null; try { sidst = localStorage.getItem(KLAR); } catch {}
+  if (sidst === '0') return false;
   throw new Error('offline');
 }
 

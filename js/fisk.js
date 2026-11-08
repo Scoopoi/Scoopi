@@ -1,6 +1,6 @@
 // Fælles felter for én fisk. Bruges af både "Ny tur" og "Fangster".
 import * as db from './db.js';
-import { esc, num, fmt, uid, ugedag, datoTekst } from './util.js';
+import { esc, num, fmt, uid, ugedag, datoTekst, gyldigTid } from './util.js';
 import { lasExif } from './exif.js';
 
 // Appen er til karpe- og medefiskeri.
@@ -85,7 +85,7 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
     <label>Art <input type="text" name="species" list="arter" placeholder="Fx Karpe" value="${esc(c.species ?? 'Karpe')}" autocomplete="off"></label>
     <div class="row tidrow">
       ${medDag ? '<label class="dag" hidden>Dag <select name="cdate"></select></label>' : ''}
-      <label class="kl">Kl. <input type="time" name="time" value="${esc(c.time)}"></label>
+      <label class="kl">Kl. <input type="text" data-tid name="time" value="${esc(c.time)}"></label>
     </div>
     <label class="karpetype" ${erKarpe(c.species ?? 'Karpe') ? '' : 'hidden'}>Karpetype
       <select name="carpType"><option value="">Ved ikke</option>${KARPETYPER.map((k) => `<option ${k === c.carpType ? 'selected' : ''}>${k}</option>`).join('')}</select>
@@ -170,7 +170,7 @@ export function lasFisk(el) {
     id: el.dataset.id,
     species: v('species'),
     carpType: erKarpe(v('species')) ? el.querySelector('[name=carpType]').value : '',
-    time: v('time') || null,
+    time: gyldigTid(v('time')) ? v('time') : null,
     date: v('cdate') || c0date(el),
     weightKg: num(v('weight')),
     lengthCm: num(v('length')),

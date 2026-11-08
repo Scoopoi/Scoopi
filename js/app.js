@@ -5,8 +5,10 @@ import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 import * as kort from './kort.js';
 import * as adgang from './adgang.js';
+import { startTidsfelter } from './util.js';
+startTidsfelter();
 
-const VERSION = '0.17.1';
+const VERSION = '0.18.0';
 
 const routes = {
   fangster: {
