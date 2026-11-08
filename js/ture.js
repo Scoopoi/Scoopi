@@ -1,6 +1,6 @@
 // "Ny tur": skema til at registrere en fisketur og dens fangst.
 import * as db from './db.js';
-import { esc, num, fmt, uid, today, varighed, datoTekst, STEDTYPER, STEDNAVN, toast, addDays, slutDato, turMinutter, udledDato, turDage, ugedag, turTid, nu, minutterSiden } from './util.js';
+import { esc, num, fmt, uid, today, varighed, datoTekst, STEDTYPER, STEDNAVN, toast, gyldigTid, addDays, slutDato, turMinutter, udledDato, turDage, ugedag, turTid, nu, minutterSiden } from './util.js';
 import { hentManglende, retning, maaneNavn } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst } from './fisk.js';
 
@@ -63,12 +63,12 @@ export async function mount(view) {
       <div class="row tidsrum">
         <span class="rl">Start</span>
         <label><span class="sr">Startdato</span><input type="date" name="date" required value="${esc(t?.date || today())}"></label>
-        <label><span class="sr">Startkl.</span><input type="time" name="start" required value="${esc(t?.start)}"></label>
+        <label><span class="sr">Startkl.</span><input type="text" data-tid name="start" required value="${esc(t?.start)}"></label>
       </div>
       <div class="row tidsrum">
         <span class="rl">Slut</span>
         <label><span class="sr">Slutdato</span><input type="date" name="endDate" value="${esc(t ? slutDato(t) : today())}"></label>
-        <label><span class="sr">Slutkl.</span><input type="time" name="end" value="${esc(t?.end)}"></label>
+        <label><span class="sr">Slutkl.</span><input type="text" data-tid name="end" value="${esc(t?.end)}"></label>
       </div>
       <p class="muted small" id="dur"></p>
 
@@ -145,13 +145,14 @@ export async function mount(view) {
   visPos();
 
   // Tur lige nu (fra felterne)
-  const turNu = () => ({ date: form.date.value, start: form.start.value || '00:00', end: form.end.value || null, endDate: form.endDate.value || null });
+  const turNu = () => ({ date: form.date.value, start: gyldigTid(form.start.value) ? form.start.value : '00:00', end: gyldigTid(form.end.value) ? form.end.value : null, endDate: form.endDate.value || null });
   // Slutdato følger med: stilles slut-uret før start, er det næste dag.
   let slutManuel = !!t && slutDato(t) !== (t.end && t.end < t.start ? addDays(t.date, 1) : t.date);
   const autoSlut = () => {
     if (slutManuel || !form.date.value) return;
     const s0 = form.start.value, e0 = form.end.value;
-    form.endDate.value = s0 && e0 && e0 < s0 ? addDays(form.date.value, 1) : form.date.value;
+    if (!gyldigTid(s0) || !gyldigTid(e0)) return;
+    form.endDate.value = e0 < s0 ? addDays(form.date.value, 1) : form.date.value;
   };
   function opdaterDage(kun, valgt) {
     const dage = form.date.value ? turDage(form.date.value, form.endDate.value || form.date.value) : [];
@@ -167,7 +168,7 @@ export async function mount(view) {
   }
   const showDur = () => {
     const m = turMinutter(turNu());
-    const tekst = !form.end.value ? '' : m == null ? '⚠️ Slut er før start.' : `Varighed: ${varighed(m)}${form.endDate.value !== form.date.value ? ` (${ugedag(form.date.value)} → ${ugedag(form.endDate.value)})` : ''}`;
+    const tekst = !gyldigTid(form.end.value) || !gyldigTid(form.start.value) ? '' : m == null ? '⚠️ Slut er før start.' : `Varighed: ${varighed(m)}${form.endDate.value !== form.date.value ? ` (${ugedag(form.date.value)} → ${ugedag(form.endDate.value)})` : ''}`;
     form.querySelector('#dur').textContent = tekst;
   };
   form.date.addEventListener('change', () => { autoSlut(); showDur(); opdaterDage(); });
@@ -205,7 +206,8 @@ export async function mount(view) {
     const fejl = [];
     if (!form.date.value) fejl.push('dato');
     if (!form.place.value.trim()) fejl.push('navn på stedet');
-    if (!form.start.value) fejl.push('starttid');
+    if (!gyldigTid(form.start.value)) fejl.push('starttid (fx 15:30)');
+    if (form.end.value && !gyldigTid(form.end.value)) fejl.push('sluttid (fx 07:00)');
     if (form.end.value && turMinutter(turNu()) == null) fejl.push('slut efter start');
     const igangNu = !form.end.value && (startNu || !!t?.igang);
     if (!form.gotFish.value && !igangNu) fejl.push('om du fik fisk');

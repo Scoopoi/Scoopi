@@ -1,6 +1,6 @@
 // "Fangster": skriv hurtigt én fangst ind, og se alle dine fisk samlet.
 import * as db from './db.js';
-import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER } from './util.js';
+import { esc, uid, today, datoTekst, STEDTYPER, toast, iTur, slutDato, nu, ugedag, fangstDato, MÅNEDER, gyldigTid } from './util.js';
 import { hentManglende } from './vejr.js';
 import { datalister, fiskElement, lasFisk, gemFotos, ryddeFotos, fiskTekst, fotoUrl, tilfoejFotos, visGalleri } from './fisk.js';
 import { retTur } from './ture.js';
@@ -52,7 +52,7 @@ export async function mount(view) {
       <label class="check"><input type="checkbox" id="gammel"> 📅 Gammel fangst – jeg kender kun ca. tidspunktet</label>
       <div class="row" id="praecis">
         <label>Dato <input type="date" name="date" value="${today()}"></label>
-        <label>Kl. <input type="time" name="time" value="${nu()}"></label>
+        <label>Kl. <input type="text" data-tid name="time" value="${nu()}"></label>
       </div>
       <div class="row" id="cirka" hidden>
         <label>Måned (ca.)
@@ -178,7 +178,7 @@ export async function mount(view) {
   // Vis om fangsten kommer på en eksisterende tur
   const turTxt = () => {
     if (erGammel()) { form.querySelector('#tur-txt').textContent = 'Gemmes som gammel fangst med cirka-dato (uden vejr og timer).'; return; }
-    const f = form.place.value.trim() && form.time.value ? findTur(trips, form.place.value, form.date.value, form.time.value) : null;
+    const f = form.place.value.trim() && gyldigTid(form.time.value) ? findTur(trips, form.place.value, form.date.value, form.time.value) : null;
     form.querySelector('#tur-txt').textContent = f
       ? `Fangsten lægges på din tur ${datoTekst(f.date)} kl. ${f.start}${f.end ? ` til ${slutDato(f) !== f.date ? datoTekst(slutDato(f)) + ' ' : ''}kl. ${f.end}` : ''}.`
       : 'Der oprettes en ny tur til fangsten. Du kan sætte sluttid på under "Ny tur".';
@@ -190,7 +190,7 @@ export async function mount(view) {
     e.preventDefault();
     const fejl = [];
     if (!erGammel() && !form.date.value) fejl.push('dato');
-    if (!erGammel() && !form.time.value) fejl.push('klokkeslæt');
+    if (!erGammel() && !gyldigTid(form.time.value)) fejl.push('klokkeslæt (fx 15:30)');
     if (!form.place.value.trim()) fejl.push('sted');
     const c = lasFisk(fel);
     if (!c.species) fejl.push('art');

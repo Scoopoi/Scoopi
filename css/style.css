@@ -386,3 +386,6 @@ ul.medl > li:first-child { border-top: 0; }
 
 .foto-knapper { display: flex; flex-wrap: wrap; gap: 8px; }
 .foto-knapper .foto-btn { display: inline-block; }
+
+input[data-tid] { font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+input.ugyldig { outline: 2px solid #b3261e !important; }
