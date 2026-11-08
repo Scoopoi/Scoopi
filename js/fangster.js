@@ -112,6 +112,7 @@ export async function mount(view) {
   const fel = fiskElement({}, { fjernbar: false, titel: 'Fisken' });
   fel.querySelector('.tidrow').remove(); // tidspunkt står øverst
   view.querySelector('#fisk-her').append(fel);
+  if (igang?.stænger?.length) fel._sætStænger(igang.stænger); // vælg stang på den igangværende tur
 
   // Position
   const gpsTxt = form.querySelector('#gps-txt');

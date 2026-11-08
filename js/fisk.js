@@ -30,11 +30,30 @@ const AGN_STANDARD = {
   'brød': ['Brød', 'Brød', 'Hvid'], 'kunstigt brød': ['Kunstigt brød', 'Brød', 'Hvid'],
   'pellets': ['Pellets', 'Fisk', 'Brun'],
 };
+// Agn-felt der selv udfylder smag og farve (bruges på fisk og på stænger)
+export function agnAutofyld(agnFelt, smagFelt, farveFelt) {
+  const auto = (retNavn) => {
+    const f = agnForslag(agnFelt.value);
+    if (!f) { // ukendt agn: fjern det, appen selv havde udfyldt
+      for (const felt of [smagFelt, farveFelt]) if (felt.dataset.auto) { felt.value = ''; delete felt.dataset.auto; felt.classList.remove('auto'); }
+      return;
+    }
+    if (retNavn && f[0] && f[0] !== agnFelt.value.trim()) agnFelt.value = f[0]; // fx "tigernuts" → "Tigernødder", "majs" → "Majs"
+    for (const [felt, v] of [[smagFelt, f[1]], [farveFelt, f[2]]]) {
+      if (v && (!felt.value || felt.dataset.auto)) { felt.value = v; felt.dataset.auto = '1'; felt.classList.add('auto'); }
+    }
+  };
+  agnFelt.addEventListener('change', () => auto(true));
+  agnFelt.addEventListener('input', () => auto(false));
+  [smagFelt, farveFelt].forEach((f) => f.addEventListener('input', (e) => { if (!e.isTrusted) return; delete f.dataset.auto; delete f.dataset.fraStang; f.classList.remove('auto'); }));
+}
+
 // Tidligere brugte kombinationer (fx Boilie → Scopex, Gul) lærer appen af dine egne fangster.
 let lært = {};
 export function lærAgn(trips) {
   const tæl = {};
-  for (const t of trips) for (const c of t.catches) {
+  const rækker = trips.flatMap((t) => [...t.catches, ...(t.stænger || []).map((r) => ({ bait: r.agn, flavour: r.smag, colour: r.farve }))]);
+  for (const c of rækker) {
     if (!c.bait || (!c.flavour && !c.colour)) continue;
     const k = c.bait.trim().toLowerCase();
     const kom = `${c.flavour || ''}|${c.colour || ''}`;
@@ -94,6 +113,7 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
       <label>Vægt (kg) <input type="text" inputmode="decimal" name="weight" placeholder="0,0" value="${esc(fmt(c.weightKg))}"></label>
       <label>Længde (cm) <input type="text" inputmode="decimal" name="length" placeholder="0" value="${esc(fmt(c.lengthCm, 1))}"></label>
     </div>
+    <label class="stang" hidden>Stang <select name="stang"></select></label>
     <label>Fanget på <input type="text" name="bait" list="agn" placeholder="Fx Boilie, majs, orm" value="${esc(c.bait)}" autocomplete="off"></label>
     <div class="row">
       <label>Smag <input type="text" name="flavour" list="smag" placeholder="Fx Scopex" value="${esc(c.flavour)}" autocomplete="off"></label>
@@ -111,21 +131,24 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
   el._nye = []; // { id, blob, url }
   el.querySelector('[name=species]').addEventListener('input', (e) => { el.querySelector('.karpetype').hidden = !erKarpe(e.target.value); });
   // Agn → smag og farve udfyldes selv (kun tomme felter, eller felter appen selv har udfyldt)
-  const agnFelt = el.querySelector('[name=bait]'), smagFelt = el.querySelector('[name=flavour]'), farveFelt = el.querySelector('[name=colour]');
-  const autoUdfyld = (retNavn) => {
-    const f = agnForslag(agnFelt.value);
-    if (!f) { // ukendt agn: fjern det, appen selv havde udfyldt
-      for (const felt of [smagFelt, farveFelt]) if (felt.dataset.auto) { felt.value = ''; delete felt.dataset.auto; felt.classList.remove('auto'); }
-      return;
-    }
-    if (retNavn && f[0] && f[0] !== agnFelt.value && f[0].toLowerCase() !== agnFelt.value.trim().toLowerCase()) agnFelt.value = f[0]; // fx "tigernuts" → "Tigernødder"
-    for (const [felt, v] of [[smagFelt, f[1]], [farveFelt, f[2]]]) {
-      if (v && (!felt.value || felt.dataset.auto)) { felt.value = v; felt.dataset.auto = '1'; felt.classList.add('auto'); }
-    }
+  agnAutofyld(el.querySelector('[name=bait]'), el.querySelector('[name=flavour]'), el.querySelector('[name=colour]'));
+  // Stang: vælg hvilken stang fisken tog på → agn, smag og farve hentes fra stangen
+  const stangSel = el.querySelector('[name=stang]');
+  el._sætStænger = (liste) => {
+    const før = stangSel.value || (c.stang ? String(c.stang) : '');
+    stangSel.innerHTML = '<option value="">Ved ikke</option>' + liste.map((r, i) => `<option value="${i + 1}">Stang ${i + 1}${r.agn ? ` – ${esc([r.agn, r.smag, r.farve].filter(Boolean).join(', '))}` : ''}</option>`).join('');
+    stangSel.value = liste.length >= +før ? før : '';
+    el.querySelector('.stang').hidden = !liste.length;
+    el._stænger = liste;
   };
-  agnFelt.addEventListener('change', () => autoUdfyld(true));
-  agnFelt.addEventListener('input', () => autoUdfyld(false));
-  [smagFelt, farveFelt].forEach((f) => f.addEventListener('input', () => { delete f.dataset.auto; f.classList.remove('auto'); }));
+  stangSel.addEventListener('change', () => {
+    const r = el._stænger?.[+stangSel.value - 1];
+    if (!r) return;
+    for (const [navn, v] of [['bait', r.agn], ['flavour', r.smag], ['colour', r.farve]]) {
+      const f = el.querySelector(`[name=${navn}]`);
+      if (v && (!f.value || f.dataset.auto || f.dataset.fraStang)) { f.value = v; f.dataset.auto = '1'; f.dataset.fraStang = '1'; f.classList.add('auto'); }
+    }
+  });
   el.querySelectorAll('.who input').forEach((r) => r.addEventListener('change', () => {
     const ven = el.querySelector('.who input:checked').value === 'ven';
     el.querySelector('.friend').hidden = !ven;
@@ -178,6 +201,7 @@ export function lasFisk(el) {
     flavour: v('flavour'),
     colour: v('colour'),
     caughtBy: el.querySelector('.who input:checked').value === 'ven' ? v('friend') || 'Ven' : '',
+    stang: +(el.querySelector('[name=stang]')?.value || 0) || null,
     photoIds: [...el._fotoIds, ...el._nye.map((f) => f.id)],
   };
   return c;
@@ -224,7 +248,7 @@ export function fiskTekst(c, t) {
   const dag = c.date && t && c.date !== t.date ? `${ugedag(c.date)} ` : '';
   return `<b>${esc(c.species)}</b>${c.carpType ? ` <span class="muted">(${esc(c.carpType)})</span>` : ''}`
     + `${c.weightKg != null ? ` ${fmt(c.weightKg)} kg` : ''}${c.lengthCm != null ? ` · ${fmt(c.lengthCm, 1)} cm` : ''}`
-    + `${c.time ? ` · ${dag}kl. ${esc(c.time)}` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}`
+    + `${c.time ? ` · ${dag}kl. ${esc(c.time)}` : ''}${c.stang ? ` · stang ${c.stang}` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}`
     + `${c.flavour || c.colour ? ` (${esc([c.flavour, c.colour].filter(Boolean).join(', '))})` : ''}`
     + `${c.caughtBy ? ` · <span class="tag">👤 ${esc(c.caughtBy)}</span>` : ''}`
     + `${c.photoIds?.length ? ` · <button type="button" class="foto-link" data-galleri="${c.photoIds.join(',')}">📷 ${c.photoIds.length}</button>` : ''}`;
