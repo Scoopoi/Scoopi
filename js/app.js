@@ -4,7 +4,7 @@ import * as fangster from './fangster.js';
 import * as statistik from './statistik.js';
 import * as drone from './drone.js';
 
-const VERSION = '0.13.0';
+const VERSION = '0.13.1';
 
 const routes = {
   fangster: {
