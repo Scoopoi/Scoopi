@@ -11,7 +11,7 @@ import { omdøbTigernødder } from './fisk.js';
 startTidsfelter();
 omdøbTigernødder();
 
-const VERSION = '0.24.1';
+const VERSION = '0.25.0';
 
 const routes = {
   fangster: {
