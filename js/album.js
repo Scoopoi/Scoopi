@@ -13,11 +13,11 @@ export async function mount(el) {
   const alle = trips.flatMap((t) => t.catches.map((c) => ({ c, t })))
     .sort((a, b) => ((b.c.date || b.t.date) + (b.c.time || '')).localeCompare((a.c.date || a.t.date) + (a.c.time || '')));
   const uniq = (f) => [...new Set(alle.map(f).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'da'));
-  const arter = uniq((x) => x.c.carpType || x.c.species), steder = uniq((x) => x.t.place), år = uniq((x) => (x.c.date || x.t.date).slice(0, 4)).reverse();
+  const arter = uniq((x) => x.c.carpType || x.c.species), steder = uniq((x) => x.t.place), år = uniq((x) => (x.t.cirka === 'ukendt' ? 'Ukendt' : (x.c.date || x.t.date).slice(0, 4))).reverse();
   const venner = uniq((x) => x.c.caughtBy);
   const ok = (x) => (filter.art === 'alle' || (x.c.carpType || x.c.species) === filter.art)
     && (filter.sted === 'alle' || x.t.place === filter.sted)
-    && (filter.aar === 'alle' || (x.c.date || x.t.date).startsWith(filter.aar))
+    && (filter.aar === 'alle' || (filter.aar === 'Ukendt' ? x.t.cirka === 'ukendt' : x.t.cirka !== 'ukendt' && (x.c.date || x.t.date).startsWith(filter.aar)))
     && (filter.hvem === 'alle' || (filter.hvem === 'mig' ? !x.c.caughtBy : x.c.caughtBy === filter.hvem));
   const vist = alle.filter(ok);
   const fotos = vist.flatMap((x) => (x.c.photoIds || []).map((id) => ({ id, x })));
