@@ -71,6 +71,15 @@ export function agnForslag(tekst) {
 }
 
 export const erKarpe = (a) => /^karpe$/i.test(String(a || '').trim());
+// Art og karpetype i ét felt: "Spejlkarpe" → { species: 'Karpe', carpType: 'Spejlkarpe' }
+const typeNavn = (t) => (t === 'Lineær' ? 'Lineær karpe' : t);
+export const artVisning = (c) => (c.carpType ? typeNavn(c.carpType) : c.species);
+export function delArt(tekst) {
+  const v = String(tekst || '').trim();
+  const m = v.match(/^(skæl|spejl|læder|lineær)/i);
+  if (m) return { species: 'Karpe', carpType: KARPETYPER.find((k) => k.toLowerCase().startsWith(m[1].toLowerCase())) };
+  return { species: erKarpe(v) ? 'Karpe' : v, carpType: '' };
+}
 export const opts = (arr) => arr.map((a) => `<option value="${esc(a)}">`).join('');
 export const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
@@ -80,7 +89,7 @@ export function datalister(trips) {
   const alle = trips.flatMap((t) => t.catches);
   return `
     <datalist id="steder">${opts(uniq([...trips.map((t) => t.place), ...STANDARDSTEDER]))}</datalist>
-    <datalist id="arter">${opts(uniq([...ARTER, ...alle.map((c) => c.species)]))}</datalist>
+    <datalist id="arter">${opts(uniq([...KARPETYPER.map(typeNavn), 'Karpe', ...ARTER, ...alle.map((c) => c.species)]))}</datalist>
     <datalist id="agn">${opts(uniq([...AGN, ...alle.map((c) => c.bait)]))}</datalist>
     <datalist id="smag">${opts(uniq([...SMAG, ...alle.map((c) => c.flavour)]))}</datalist>
     <datalist id="farver">${opts(uniq([...FARVER, ...alle.map((c) => c.colour)]))}</datalist>
@@ -101,14 +110,11 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
       <label><input type="radio" name="who-${n}" value="ven" ${c.caughtBy ? 'checked' : ''}><span>En vens fisk</span></label>
     </div>
     <label class="friend" ${c.caughtBy ? '' : 'hidden'}>Vennens navn <input type="text" name="friend" list="venner" placeholder="Fx Peter" value="${esc(c.caughtBy)}" autocomplete="off"></label>
-    <label>Art <input type="text" name="species" list="arter" placeholder="Fx Karpe" value="${esc(c.species ?? 'Karpe')}" autocomplete="off"></label>
+    <label>Art <input type="text" name="species" list="arter" value="${esc(c.species == null ? '' : artVisning(c))}" placeholder="Fx Spejlkarpe, Brasen" autocomplete="off"></label>
     <div class="row tidrow">
       ${medDag ? '<label class="dag" hidden>Dag <select name="cdate"></select></label>' : ''}
       <label class="kl">Kl. <input type="text" data-tid name="time" value="${esc(c.time)}"></label>
     </div>
-    <label class="karpetype" ${erKarpe(c.species ?? 'Karpe') ? '' : 'hidden'}>Karpetype
-      <select name="carpType"><option value="">Ved ikke</option>${KARPETYPER.map((k) => `<option ${k === c.carpType ? 'selected' : ''}>${k}</option>`).join('')}</select>
-    </label>
     <div class="row">
       <label>Vægt (kg) <input type="text" inputmode="decimal" name="weight" placeholder="0,0" value="${esc(fmt(c.weightKg))}"></label>
       <label>Længde (cm) <input type="text" inputmode="decimal" name="length" placeholder="0" value="${esc(fmt(c.lengthCm, 1))}"></label>
@@ -130,7 +136,8 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
   el._dato = c.date || null;
   el._fotoIds = [...(c.photoIds || [])];
   el._nye = []; // { id, blob, url }
-  el.querySelector('[name=species]').addEventListener('input', (e) => { el.querySelector('.karpetype').hidden = !erKarpe(e.target.value); });
+  // Ret stavning, når feltet forlades (fx "spejl" → "Spejlkarpe")
+  el.querySelector('[name=species]').addEventListener('change', (e) => { const a = delArt(e.target.value); if (a.species) e.target.value = artVisning(a); });
   // Agn → smag og farve udfyldes selv (kun tomme felter, eller felter appen selv har udfyldt)
   agnAutofyld(el.querySelector('[name=bait]'), el.querySelector('[name=flavour]'), el.querySelector('[name=colour]'));
   // Stang: vælg hvilken stang fisken tog på → agn, smag og farve hentes fra stangen
@@ -201,8 +208,7 @@ export function lasFisk(el) {
   const v = (n) => (el.querySelector(`[name=${n}]`)?.value || '').trim();
   const c = {
     id: el.dataset.id,
-    species: v('species'),
-    carpType: erKarpe(v('species')) ? el.querySelector('[name=carpType]').value : '',
+    ...delArt(v('species')),
     time: gyldigTid(v('time')) ? v('time') : null,
     date: v('cdate') || c0date(el),
     weightKg: num(v('weight')),
@@ -256,7 +262,7 @@ export async function komprimer(file, max = 1600) {
 // Én linje tekst om en fisk (til lister).
 export function fiskTekst(c, t) {
   const dag = c.date && t && c.date !== t.date ? `${ugedag(c.date)} ` : '';
-  return `<b>${esc(c.species)}</b>${c.carpType ? ` <span class="muted">(${esc(c.carpType)})</span>` : ''}`
+  return `<b>${esc(artVisning(c))}</b>`
     + `${c.weightKg != null ? ` ${fmt(c.weightKg)} kg` : ''}${c.lengthCm != null ? ` · ${fmt(c.lengthCm, 1)} cm` : ''}`
     + `${c.time ? ` · ${dag}kl. ${esc(c.time)}` : ''}${c.stang ? ` · stang ${c.stang}` : ''}${c.bait ? ` · på ${esc(c.bait)}` : ''}`
     + `${c.flavour || c.colour ? ` (${esc([c.flavour, c.colour].filter(Boolean).join(', '))})` : ''}`
