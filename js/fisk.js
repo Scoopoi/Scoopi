@@ -16,12 +16,48 @@ export const SMAG = ['Scopex', 'Ananas', 'Jordbær', 'Tutti frutti', 'Banan', 'K
 export const FARVER = ['Hvid', 'Gul', 'Pink', 'Orange', 'Rød', 'Grøn', 'Brun', 'Sort', 'Lilla', 'Blå', 'Sølv', 'Naturlig'];
 export const STANDARDSTEDER = ['Vallensbæk Sø', 'Tueholm Sø'];
 
+// Naturlige agn (og kunstige kopier) har en fast smag og farve, som udfyldes automatisk.
+// Nøglerne er små bogstaver; flere stavemåder peger på samme agn.
+const AGN_STANDARD = {
+  'tigernødder': ['Tigernødder', 'Tigernød', 'Brun'], 'tigernød': ['Tigernødder', 'Tigernød', 'Brun'],
+  'tigernuts': ['Tigernødder', 'Tigernød', 'Brun'], 'tiger nuts': ['Tigernødder', 'Tigernød', 'Brun'], 'tigernut': ['Tigernødder', 'Tigernød', 'Brun'],
+  'kunstige tigernødder': ['Kunstige tigernødder', 'Tigernød', 'Brun'],
+  'majs': ['Majs', 'Majs', 'Gul'], 'sweetcorn': ['Majs', 'Majs', 'Gul'], 'kunstig majs': ['Kunstig majs', 'Majs', 'Gul'],
+  'hampefrø': ['Hampefrø', 'Hamp', 'Sort'], 'hamp': ['Hampefrø', 'Hamp', 'Sort'],
+  'maddiker': ['Maddiker', 'Maddike', 'Hvid'], 'maddike': ['Maddiker', 'Maddike', 'Hvid'], 'kunstig maddike': ['Kunstig maddike', 'Maddike', 'Hvid'],
+  'casters': ['Casters', 'Caster', 'Brun'],
+  'orm': ['Orm', 'Orm', 'Rød'], 'regnorm': ['Orm', 'Orm', 'Rød'], 'dendrobena': ['Orm', 'Orm', 'Rød'],
+  'brød': ['Brød', 'Brød', 'Hvid'], 'kunstigt brød': ['Kunstigt brød', 'Brød', 'Hvid'],
+  'pellets': ['Pellets', 'Fisk', 'Brun'],
+};
+// Tidligere brugte kombinationer (fx Boilie → Scopex, Gul) lærer appen af dine egne fangster.
+let lært = {};
+export function lærAgn(trips) {
+  const tæl = {};
+  for (const t of trips) for (const c of t.catches) {
+    if (!c.bait || (!c.flavour && !c.colour)) continue;
+    const k = c.bait.trim().toLowerCase();
+    const kom = `${c.flavour || ''}|${c.colour || ''}`;
+    tæl[k] = tæl[k] || {}; tæl[k][kom] = (tæl[k][kom] || 0) + 1;
+  }
+  lært = Object.fromEntries(Object.entries(tæl).map(([k, v]) => [k, Object.entries(v).sort((a, b) => b[1] - a[1])[0][0].split('|')]));
+}
+// Forslag til [agn-navn, smag, farve] for det, der er skrevet.
+export function agnForslag(tekst) {
+  const k = String(tekst || '').trim().toLowerCase();
+  if (!k) return null;
+  if (AGN_STANDARD[k]) return AGN_STANDARD[k];
+  if (lært[k]) return [null, lært[k][0], lært[k][1]];
+  return null;
+}
+
 export const erKarpe = (a) => /^karpe$/i.test(String(a || '').trim());
 export const opts = (arr) => arr.map((a) => `<option value="${esc(a)}">`).join('');
 export const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
 // Datalister med forslag (standardlister + det, du selv har skrevet før).
 export function datalister(trips) {
+  lærAgn(trips);
   const alle = trips.flatMap((t) => t.catches);
   return `
     <datalist id="steder">${opts(uniq([...trips.map((t) => t.place), ...STANDARDSTEDER]))}</datalist>
@@ -71,6 +107,22 @@ export function fiskElement(c = {}, { fjernbar = true, titel = 'Fisk', medDag = 
   el._fotoIds = [...(c.photoIds || [])];
   el._nye = []; // { id, blob, url }
   el.querySelector('[name=species]').addEventListener('input', (e) => { el.querySelector('.karpetype').hidden = !erKarpe(e.target.value); });
+  // Agn → smag og farve udfyldes selv (kun tomme felter, eller felter appen selv har udfyldt)
+  const agnFelt = el.querySelector('[name=bait]'), smagFelt = el.querySelector('[name=flavour]'), farveFelt = el.querySelector('[name=colour]');
+  const autoUdfyld = (retNavn) => {
+    const f = agnForslag(agnFelt.value);
+    if (!f) { // ukendt agn: fjern det, appen selv havde udfyldt
+      for (const felt of [smagFelt, farveFelt]) if (felt.dataset.auto) { felt.value = ''; delete felt.dataset.auto; felt.classList.remove('auto'); }
+      return;
+    }
+    if (retNavn && f[0] && f[0] !== agnFelt.value && f[0].toLowerCase() !== agnFelt.value.trim().toLowerCase()) agnFelt.value = f[0]; // fx "tigernuts" → "Tigernødder"
+    for (const [felt, v] of [[smagFelt, f[1]], [farveFelt, f[2]]]) {
+      if (v && (!felt.value || felt.dataset.auto)) { felt.value = v; felt.dataset.auto = '1'; felt.classList.add('auto'); }
+    }
+  };
+  agnFelt.addEventListener('change', () => autoUdfyld(true));
+  agnFelt.addEventListener('input', () => autoUdfyld(false));
+  [smagFelt, farveFelt].forEach((f) => f.addEventListener('input', () => { delete f.dataset.auto; f.classList.remove('auto'); }));
   el.querySelectorAll('.who input').forEach((r) => r.addEventListener('change', () => {
     const ven = el.querySelector('.who input:checked').value === 'ven';
     el.querySelector('.friend').hidden = !ven;
