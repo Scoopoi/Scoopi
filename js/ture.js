@@ -18,7 +18,17 @@ export async function mount(view) {
   let pos = t && t.lat != null ? { lat: t.lat, lon: t.lon } : null;
 
   const igang = trips.filter((x) => x.igang && !x.end);
+  const alleFisk = trips.flatMap((x) => x.catches);
+  const stoerste = alleFisk.filter((c) => /karpe/i.test(c.species) && c.weightKg).sort((a, b) => b.weightKg - a.weightKg)[0];
   view.innerHTML = `
+    ${!t ? `
+      <section class="hero">
+        <div class="hero-txt">
+          <div class="hero-navn">Karpeloggen</div>
+          <div class="hero-sub">Karpe- og medefiskeri</div>
+          ${trips.length ? `<div class="hero-tal"><span><b>${trips.length}</b> ture</span><span><b>${alleFisk.length}</b> fisk</span>${stoerste ? `<span>🏆 <b>${fmt(stoerste.weightKg)} kg</b></span>` : ''}</div>` : ''}
+        </div>
+      </section>` : ''}
     ${!t ? igang.map((x) => `
       <section class="card igang">
         <h2>🟢 Igangværende tur</h2>
