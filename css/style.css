@@ -372,3 +372,14 @@ h3.sek { color: var(--brand); background: var(--card); display: inline-block; pa
 
 /* Felter, appen selv har udfyldt */
 input.auto { box-shadow: inset 0 0 0 2px rgba(201,162,74,.6); }
+
+/* Låst: kun login/venteside */
+body.laast .tabs { display: none; }
+body.laast { padding-bottom: 0; }
+@media (min-width: 900px) { body.laast { padding-left: 0; } }
+.adgang-hero { height: 170px; }
+ul.medl { list-style: none; padding: 0; margin: 0 0 12px; }
+ul.medl > li { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+ul.medl > li:first-child { border-top: 0; }
+.kode { margin-top: 4px; font-size: .9rem; }
+.card h4 { margin: 12px 0 4px; font-size: .9rem; color: var(--muted); }
